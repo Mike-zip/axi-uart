@@ -1,94 +1,88 @@
 // Michael Marquis
-// 6/19/2026
 
-module uart_tx #(
-    parameter CLK_FREQ  = 50_000_000,   // 50MHz
-    parameter BAUD_RATE = 9600
+module Uart_Tx #(
+    parameter Clk_Frequency = 50_000_000,
+    parameter Baud_Rate     = 9600
 )(
-    input  wire       clk,
-    input  wire       rst_n,        //active low
-    input  wire [7:0] data_in,
-    input  wire       tx_start,     //pulse for one cycle
-    output reg        tx_busy,
-    output reg        tx
+    input  wire       Clk,
+    input  wire       Rst_N,
+
+    input  wire [7:0] Data_In,
+    input  wire       Tx_Start,
+    output reg        Tx_Busy,
+    output reg        Tx          //(bytes to bits)
 );
+    localparam Baud_Division = Clk_Frequency / Baud_Rate;
+    integer    Baud_Count;
+    wire       Baud_Tick;
 
-  //baud divider (int division)
-    localparam BAUD_DIV = CLK_FREQ / BAUD_RATE;
-    reg [$clog2(BAUD_DIV)-1:0] baud_cnt;
-    reg baud_rst;
-    wire baud_tick;
-
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
-            baud_cnt <= 0;
-        else if (baud_rst || baud_cnt == BAUD_DIV - 1)
-            baud_cnt <= 0;
-        else if (tx_busy)
-            baud_cnt <= baud_cnt + 1;
+    always @(posedge Clk or negedge Rst_N) begin
+        if(!Rst_N)
+            Baud_Count <= 0;
+        else if(!Tx_Busy)                          // held at 0 while idle => synced
+            Baud_Count <= 0;
+        else if(Baud_Count == Baud_Division - 1)
+            Baud_Count <= 0;
+        else
+            Baud_Count <= Baud_Count + 1;
     end
 
-    assign baud_tick = (baud_cnt == BAUD_DIV - 1);
+    assign Baud_Tick = (Baud_Count == Baud_Division - 1);
 
-    reg [3:0] bit_idx;
-    reg [7:0] tx_shift;
 
-    localparam IDLE  = 2'd0,
-               START = 2'd1,
-               DATA  = 2'd2,
-               STOP  = 2'd3;
+    reg [3:0] Bit_Index;    //bit counter
+    reg [7:0] Tx_Shift;
 
-    reg [1:0] state;
+    localparam Idle = 2'd0, Start = 2'd1, Data = 2'd2, Stop = 2'd3; //0,1,2,3 ___IDLE,START,DATA,STOP
+    reg [1:0] State;
 
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            state    <= IDLE;
-            tx       <= 1'b1;
-            tx_busy  <= 1'b0;
-            bit_idx  <= 4'd0;
-            tx_shift <= 8'd0;
-            baud_rst <= 1'b0;
-        end 
-      	else begin
-            baud_rst <= 1'b0;   //defualt
-            case (state)
-                IDLE: begin
-                    tx      <= 1'b1;
-                    tx_busy <= 1'b0;
-                    if (tx_start) begin
-                        tx_shift <= data_in;
-                        tx_busy  <= 1'b1;
-                        baud_rst <= 1'b1;   //this is to syncronise the counter
-                        state    <= START;
+    always @(posedge Clk or negedge Rst_N) begin
+        if(!Rst_N) begin
+            State     <= Idle;
+            Tx        <= 1'b1;
+            Tx_Busy   <= 1'b0;
+            Bit_Index <= 4'd0;
+            Tx_Shift  <= 8'd0;
+        end
+        else begin
+            case(State)
+
+                Idle: begin
+                    Tx      <= 1'b1;
+                    Tx_Busy <= 1'b0;
+                    if(Tx_Start) begin
+                        Tx_Shift <= Data_In;
+                        Tx_Busy  <= 1'b1;
+                        State    <= Start;
                     end
                 end
-                START: begin
-                    tx <= 1'b0;
-                    if (baud_tick) begin
-                        bit_idx <= 4'd0;
-                        state   <= DATA;
+
+                Start: begin
+                    Tx <= 1'b0;                     //this is that start bit when it drops low
+                    if(Baud_Tick) begin
+                        Bit_Index <= 4'd0;
+                        State     <= Data;
                     end
                 end
-                DATA: begin
-                  tx <= tx_shift[bit_idx];    //LSB first
-                    if (baud_tick) begin
-                        if (bit_idx == 4'd7)
-                            state <= STOP;
+
+                Data: begin
+                    Tx <= Tx_Shift[Bit_Index];      //off the lsb side
+                    if(Baud_Tick) begin
+                        if(Bit_Index == 4'd7)
+                            State <= Stop;
                         else
-                            bit_idx <= bit_idx + 1;
+                            Bit_Index <= Bit_Index + 1'b1;
                     end
                 end
-                STOP: begin
-                    tx <= 1'b1;
-                    if (baud_tick) begin
-                        state   <= IDLE;
-                        tx_busy <= 1'b0;
+
+                Stop: begin
+                    Tx <= 1'b1;
+                    if(Baud_Tick) begin
+                        State   <= Idle;
+                        Tx_Busy <= 1'b0;
                     end
                 end
-                //error if not here
-                default: state <= IDLE;
             endcase
         end
     end
-
 endmodule

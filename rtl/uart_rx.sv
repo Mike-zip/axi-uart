@@ -51,7 +51,7 @@ module Uart_Rx #(
 
     wire Rx_Stable_In = Stable2;
 
-    localparam Idle = 2'd0, Start = 2'd1, Data = 2'd2, Stop = 2'd3; //0,1,2,3 ___IDLE,START,DATA,STOP
+    localparam Idle = 2'd0, Start = 2'd1, Data = 2'd2, Stop = 2'd3;         //0,1,2,3 ___IDLE,START,DATA,STOP
     localparam Middle_Of_Bit = (Over_Sample / 2) - 1;
     reg [1:0] State;
     reg [7:0] Rx_Shift_In;
@@ -85,9 +85,9 @@ module Uart_Rx #(
                     Start: begin
                         if(Sample_Index == Middle_Of_Bit) begin
                             if(Rx_Stable_In == 1'b0) begin
-                                State        <= Data;        //we leave at Middle of the bit
-                                Sample_Index <= 5'd0;         //which means our index zero is
-                                Bit_Index    <= 4'd0;         //from the middle of the bit
+                                State        <= Data;                             //we leave at Middle of the bit
+                                Sample_Index <= 5'd0;                             //which means our index zero is
+                                Bit_Index    <= 4'd0;                             //from the middle of the bit
                             end
                             else
                                 State <= Idle;
@@ -97,9 +97,9 @@ module Uart_Rx #(
                     end
 
                     Data: begin
-                        if(Sample_Index == Over_Sample - 1) begin      //pick up at our index zero
-                            Sample_Index <= 5'd0;                      //which is from the middle
-                            Rx_Shift_In  <= {Rx_Stable_In, Rx_Shift_In[7:1]}; //of the bit
+                        if(Sample_Index == Over_Sample - 1) begin                  //pick up at our index zero
+                            Sample_Index <= 5'd0;                                  //which is from the middle
+                            Rx_Shift_In  <= {Rx_Stable_In, Rx_Shift_In[7:1]};      //of the bit
                             if(Bit_Index == 4'd7)
                                 State <= Stop;
                             else

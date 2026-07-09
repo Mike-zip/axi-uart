@@ -23,8 +23,8 @@ Baud rate is set by two parameters, `CLK_FREQ` and `BAUD_RATE`, so changing the 
 ## Roadmap
 
 - [x] UART transmitter
-- [ ] UART receiver
-- [ ] TX/RX FIFOs
+- [x] UART receiver
+- [x] TX/RX FIFOs
 - [ ] AXI4-Lite register interface
 - [ ] Loopback testbench
 - [ ] Parity + configurable framing

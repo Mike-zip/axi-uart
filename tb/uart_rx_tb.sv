@@ -99,7 +99,7 @@ module Test_Bench;
     end
   endtask
  
-  
+  //This is to simplify FSM states into names for visual purpose
   function [8*5 : 1] State_Name (input [1:0] Name_State);
     case(Name_State)
       2'd0:		State_Name =	"Idle";

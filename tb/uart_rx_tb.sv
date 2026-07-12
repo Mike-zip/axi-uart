@@ -43,28 +43,65 @@ module Test_Bench;
   	always #10 Clk_Tb = ~Clk_Tb;
   
   	initial begin
+        integer Latency0, Latency1;
     	Clk_Tb			= 1'b0;
   		Reset_Tb 		= 1'b0;
 		Rx_Data_Tb		= 8'd1;
    		Pop_Enable_Tb	= 1'b0;
     	#100;
     	Reset_Tb 		= 1'b1;
+      
     	@(posedge Clk_Tb);
     
       for(integer B = 0; B < 256; B = B + 1) begin
         Recieve_Byte(B [7 : 0]);  
       end
       
+      
+      Measure_Sync_Latency(1'b1, Latency1);
+      Measure_Sync_Latency(1'b0, Latency0);
+      $display("\nMeasured Synchronizer Latency: Rise= %0d Clocks, Fall= %0d Clocks", Latency1, Latency0);
+      
+      if(Latency1 == 2 && Latency0 ==2)
+        $display("\nPASS: 2-FF Synchronizer Latency Confirmed = 2 clocks");
+      else begin
+        $display("\nFAIL: 2-FF Unexpected Synchronizer Latency");
+      end
+      
       if(Errors == 0)
-        $display("\nPASS: all 256 cases passed Erros<%0d>\n", Errors);
+        $display("\nPASS: all 256 cases passed");
       else
         $display("\nFAIL: Erros<%0d>\n", Errors);
-    	$finish;
+      	$finish;
     
   end
   
-  
-  task Recieve_Byte (input [7 : 0] Bits);
+  task Measure_Sync_Latency (input New_Value, output integer Latency);
+    integer X;
+    reg Found;
+    begin
+      Found		= 1'b0;
+      Latency	= -1;
+      
+      Rx_Data_Tb = ~New_Value;
+      repeat (5) @(posedge Clk_Tb);
+      @(posedge Clk_Tb);
+      Rx_Data_Tb = New_Value;
+      
+      for(X = 0; X <= 10 && !Found; X = X + 1) begin
+        if(DUT.Rx_Stable_In === New_Value) begin
+          Latency 	= X;
+          Found		= 1'b1;
+        end
+        else begin
+          @(posedge Clk_Tb);
+        end
+      end
+    end
+  endtask
+    
+    
+  task Recieve_Byte (input [7 : 0] Bits); //Test all cases for recieving a byte
     begin
       @(posedge Clk_Tb);
       $display("START VALUES: Rx_Shift_In: %b State: %s", DUT.Rx_Shift_In, State_Name(DUT.State));
@@ -99,8 +136,8 @@ module Test_Bench;
     end
   endtask
  
-  //This is to simplify FSM states into names for visual purpose
-  function [8*5 : 1] State_Name (input [1:0] Name_State);
+  
+  function [8*5 : 1] State_Name (input [1:0] Name_State); //Change our state binary values to make readability easier
     case(Name_State)
       2'd0:		State_Name =	"Idle";
       2'd1:		State_Name =	"Start";

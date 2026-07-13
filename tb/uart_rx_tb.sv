@@ -38,6 +38,12 @@ module Test_Bench;
     .Data_Out(Data_Out_Tb)
   );
   
+  	
+  
+  	initial begin
+      $dumpfile("wave.vcd");
+      $dumpvars(0, Test_Bench);
+	end
   
     integer Errors = 0;
   	always #10 Clk_Tb = ~Clk_Tb;
@@ -52,11 +58,12 @@ module Test_Bench;
     	Reset_Tb 		= 1'b1;
       
     	@(posedge Clk_Tb);
-    
+     
       for(integer B = 0; B < 256; B = B + 1) begin
-        Recieve_Byte(B [7 : 0]);  
+        Recieve_Byte	(B [7 : 0]); 
+        Send_Bad_Frame	(B [7 : 0]);
       end
-      
+      Over_Run_Error_Check();
       
       Measure_Sync_Latency(1'b1, Latency1);
       Measure_Sync_Latency(1'b0, Latency0);
@@ -69,12 +76,78 @@ module Test_Bench;
       end
       
       if(Errors == 0)
-        $display("\nPASS: all 256 cases passed");
+        $display("\nPASS: ALL CASES PASSED");
       else
         $display("\nFAIL: Erros<%0d>\n", Errors);
       	$finish;
     
-  end
+    end
+  
+  	
+  task Over_Run_Error_Check ();
+    begin
+      integer visable;
+      for(integer i = 0; i < Fifo_Slots_Tb + 1; i = i + 1) begin
+        @(posedge Clk_Tb);
+        Rx_Data_Tb = 1'b0;
+        repeat (10) @(posedge Clk_Tb);
+        for(integer k = 0; k < 8; k = k + 1) begin
+          Rx_Data_Tb = 1'b1;
+        end
+        Rx_Data_Tb = 1'b1;
+        repeat (10) @(posedge Clk_Tb);
+        wait (Rx_Ready_Tb == 1'b1);
+      end
+      visable = DUT.Over_Run_Error;
+      if(DUT.Over_Run_Error != 1'b1) begin
+        $display("\nFAIL: 'Over_Run_Error' did not assert to '1' Value= %0b", DUT.Over_Run_Error);
+        Errors = Errors + 1;
+      end
+      else
+        $display("\nPASS: 'Over_Run_Error' asserted to : %0b", DUT.Over_Run_Error);
+    end
+    endtask
+  
+  
+  
+  task Send_Bad_Frame (input [7 : 0] Bits);   
+    begin
+      Rx_Data_Tb = 1'b1;
+      repeat (10) @(posedge Clk_Tb);
+      Rx_Data_Tb = 1'b0;
+      repeat (3)  @(posedge Clk_Tb);
+      Rx_Data_Tb = 1'b1;
+      repeat (7)  @(posedge Clk_Tb);
+      
+      
+      if(DUT.State !== 2'b00) begin
+        $display("\nFAIL: Failed Idle With Bad Start Bit State= %s", State_Name(DUT.State));
+        Errors = Errors + 1;
+      end
+      else
+        $display("\nPASS: Bad Start Bit => Idle");
+      //Bad Stop Bit Below
+      Rx_Data_Tb = 1'b0;
+      repeat(10) @(posedge Clk_Tb);
+      for(integer i = 0; i < 8; i = i + 1) begin
+        Rx_Data_Tb = Bits[i];
+        repeat (10) @(posedge Clk_Tb);
+      end
+      Rx_Data_Tb = 1'b0;
+      repeat(10) @(posedge Clk_Tb);
+      if(DUT.Frame_Error !== 1'b1) begin
+        $display("\nFAIL: Failed To Throw 'Frame_Error' : %0b", DUT.Frame_Error);
+        Errors = Errors + 1;
+      end
+      else
+        $display("\nPASS: Threw The 'Frame_Error'");
+      
+      //clean transition to 'Idle'
+      Rx_Data_Tb = 1'b1;
+      wait(DUT.State == 2'b00);
+      repeat (2) @(posedge Clk_Tb);
+    end
+  endtask
   
   task Measure_Sync_Latency (input New_Value, output integer Latency);
     integer X;
@@ -101,6 +174,8 @@ module Test_Bench;
   endtask
     
     
+ 
+  
   task Recieve_Byte (input [7 : 0] Bits); //Test all cases for recieving a byte
     begin
       @(posedge Clk_Tb);
@@ -121,18 +196,23 @@ module Test_Bench;
     wait(Rx_Ready_Tb == 1'b1) begin
       
     	Pop_Enable_Tb = 1'b1;
-      @(posedge Clk_Tb);
+      repeat (2) @(posedge Clk_Tb);
       
       if(Bits !== Data_Out_Tb) begin
         
       	Errors = Errors + 1;
-        $display("bits != data out Bits: %b, Data_Out_Tb: %b", Bits, Data_Out_Tb);
-        
+        $display("\nFAIL: bits != data out Bits: %b, Data_Out_Tb: %b", Bits, Data_Out_Tb);
+         
       end
       else begin
         $display("Bits: %b,  Data_Out_Tb: %b", Bits, Data_Out_Tb);  
       end
        Pop_Enable_Tb = 1'b0;
+      
+      //clean transition to 'Idle'
+      Rx_Data_Tb = 1'b1;
+      wait(DUT.State == 2'b00);
+      repeat (2) @(posedge Clk_Tb);
     end
   endtask
  

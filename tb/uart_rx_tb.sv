@@ -46,6 +46,11 @@ module Test_Bench;
 	end
   
     integer Errors = 0;
+    integer Error_Recieve = 0;
+    integer Error_Bad_Frame = 0;
+    integer Error_Over_Run = 0;
+    integer Error_Pop_Read = 0;
+    integer Error_Sync_Latency = 0;
   	always #10 Clk_Tb = ~Clk_Tb;
   
   	initial begin
@@ -58,13 +63,16 @@ module Test_Bench;
     	Reset_Tb 		= 1'b1;
       
     	@(posedge Clk_Tb);
-     
+      Reset_DUT();
       for(integer B = 0; B < 256; B = B + 1) begin
         Recieve_Byte	(B [7 : 0]); 
         Send_Bad_Frame	(B [7 : 0]);
       end
+      Reset_DUT();
       Over_Run_Error_Check();
-      
+      Reset_DUT();
+      Pop_And_Read_Check();
+      Reset_DUT();
       Measure_Sync_Latency(1'b1, Latency1);
       Measure_Sync_Latency(1'b0, Latency0);
       $display("\nMeasured Synchronizer Latency: Rise= %0d Clocks, Fall= %0d Clocks", Latency1, Latency0);
@@ -73,35 +81,95 @@ module Test_Bench;
         $display("\nPASS: 2-FF Synchronizer Latency Confirmed = 2 clocks");
       else begin
         $display("\nFAIL: 2-FF Unexpected Synchronizer Latency");
+        Error_Sync_Latency = Error_Sync_Latency + 1;
       end
       
       if(Errors == 0)
-        $display("\nPASS: ALL CASES PASSED");
+        $display("\nPASS: ALL CASES PASSED\n");
       else
         $display("\nFAIL: Erros<%0d>\n", Errors);
+	      Print_Summary();
       	$finish;
     
     end
+   
   
-  	
+  task Simultaneous_Push_Pop_Check (); //Left off here /\ need to pop/read and push at the same time to check for errors
+    begin
+    end
+  endtask
+  
+  
+  
+  
+  task Pop_And_Read_Check ();
+    begin
+      reg [7 : 0] Byte_Value;
+      Pop_Enable_Tb = 1'b0;
+      
+      for(integer i = 0; i < Fifo_Slots_Tb; i = i + 1) begin
+        Byte_Value = i[7 : 0];
+        @(posedge Clk_Tb);
+        Rx_Data_Tb = 1'b0;
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+        for(integer k = 0; k < 8; k = k + 1) begin
+          Rx_Data_Tb = Byte_Value[k];
+          repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+        end
+        Rx_Data_Tb = 1'b1;
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+      end
+      
+      for(integer o = 0; o < 16; o = o + 1) begin
+      Pop_Enable_Tb = 1'b1;
+      @(posedge Clk_Tb);
+      Pop_Enable_Tb = 1'b0;
+        if(Data_Out_Tb !== o[7 : 0]) begin
+        $display("\nFAIL: %0b", Data_Out_Tb);
+        Errors = Errors + 1;
+        Error_Pop_Read = Error_Pop_Read + 1;
+      end
+        else 
+          $display("PASS: Index %0b = %0b", o, Data_Out_Tb);
+      end
+
+    end
+  endtask
+  
+  
   task Over_Run_Error_Check ();
     begin
-      integer visable;
+      integer Visible;
+      reg [7:0]Fifo_Visible [0:16];
+      
+      Pop_Enable_Tb = 1'b0;
       for(integer i = 0; i < Fifo_Slots_Tb + 1; i = i + 1) begin
         @(posedge Clk_Tb);
         Rx_Data_Tb = 1'b0;
-        repeat (10) @(posedge Clk_Tb);
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
         for(integer k = 0; k < 8; k = k + 1) begin
           Rx_Data_Tb = 1'b1;
+          repeat (Over_Sample_Tb) @(posedge Clk_Tb);
         end
         Rx_Data_Tb = 1'b1;
-        repeat (10) @(posedge Clk_Tb);
-        wait (Rx_Ready_Tb == 1'b1);
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       end
-      visable = DUT.Over_Run_Error;
+      
+      
+      Visible = DUT.Over_Run_Error;
+      for(integer m = 0; m < 16; m = m + 1) begin
+        for(integer p = 0; p < 8; p = p + 1) begin
+         Fifo_Visible[m] [p] = DUT.Fifo_Memory_Hold[m][p];
+        
+      end
+        $display("Input Into FIFO Slots= %0b|Index= %0d ", Fifo_Visible[m], m);
+      end
+      
+      
       if(DUT.Over_Run_Error != 1'b1) begin
         $display("\nFAIL: 'Over_Run_Error' did not assert to '1' Value= %0b", DUT.Over_Run_Error);
         Errors = Errors + 1;
+        Error_Over_Run = Error_Over_Run + 1;
       end
       else
         $display("\nPASS: 'Over_Run_Error' asserted to : %0b", DUT.Over_Run_Error);
@@ -113,7 +181,7 @@ module Test_Bench;
   task Send_Bad_Frame (input [7 : 0] Bits);   
     begin
       Rx_Data_Tb = 1'b1;
-      repeat (10) @(posedge Clk_Tb);
+      repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       Rx_Data_Tb = 1'b0;
       repeat (3)  @(posedge Clk_Tb);
       Rx_Data_Tb = 1'b1;
@@ -123,21 +191,23 @@ module Test_Bench;
       if(DUT.State !== 2'b00) begin
         $display("\nFAIL: Failed Idle With Bad Start Bit State= %s", State_Name(DUT.State));
         Errors = Errors + 1;
+        Error_Bad_Frame = Error_Bad_Frame + 1;
       end
       else
         $display("\nPASS: Bad Start Bit => Idle");
       //Bad Stop Bit Below
       Rx_Data_Tb = 1'b0;
-      repeat(10) @(posedge Clk_Tb);
+      repeat(Over_Sample_Tb) @(posedge Clk_Tb);
       for(integer i = 0; i < 8; i = i + 1) begin
         Rx_Data_Tb = Bits[i];
-        repeat (10) @(posedge Clk_Tb);
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       end
       Rx_Data_Tb = 1'b0;
-      repeat(10) @(posedge Clk_Tb);
+      repeat(Over_Sample_Tb) @(posedge Clk_Tb);
       if(DUT.Frame_Error !== 1'b1) begin
         $display("\nFAIL: Failed To Throw 'Frame_Error' : %0b", DUT.Frame_Error);
         Errors = Errors + 1;
+        Error_Bad_Frame = Error_Bad_Frame + 1;
       end
       else
         $display("\nPASS: Threw The 'Frame_Error'");
@@ -181,15 +251,15 @@ module Test_Bench;
       @(posedge Clk_Tb);
       $display("START VALUES: Rx_Shift_In: %b State: %s", DUT.Rx_Shift_In, State_Name(DUT.State));
       Rx_Data_Tb = 1'b0;
-      repeat(10) @(posedge Clk_Tb);
+      repeat(Over_Sample_Tb) @(posedge Clk_Tb);
       for(integer i = 0; i < 8; i = i + 1) begin
         
         Rx_Data_Tb = Bits[i];
-        repeat(10) @(posedge Clk_Tb);    
+        repeat(Over_Sample_Tb) @(posedge Clk_Tb);    
         $display("WORK VALUES:  Rx_Shift_In: %b State: %s, i: %0d", DUT.Rx_Shift_In, State_Name(DUT.State), i);
       end
       Rx_Data_Tb = 1'b1;
-      repeat(10) @(posedge Clk_Tb);
+      repeat(Over_Sample_Tb) @(posedge Clk_Tb);
       $display("END VALUES:   Rx_Shift_In: %b State: %s", DUT.Rx_Shift_In, State_Name(DUT.State));
     end
     
@@ -201,6 +271,7 @@ module Test_Bench;
       if(Bits !== Data_Out_Tb) begin
         
       	Errors = Errors + 1;
+	      Error_Recieve = Error_Recieve + 1;
         $display("\nFAIL: bits != data out Bits: %b, Data_Out_Tb: %b", Bits, Data_Out_Tb);
          
       end
@@ -216,6 +287,16 @@ module Test_Bench;
     end
   endtask
  
+  task Reset_DUT ();
+    begin
+      Rx_Data_Tb 	= 1'b1;
+      Pop_Enable_Tb	= 1'b0;
+      Reset_Tb		= 1'b0;
+      repeat (2) @(posedge Clk_Tb);
+      Reset_Tb		= 1'b1;
+      @(posedge Clk_Tb);
+    end
+  endtask
   
   function [8*5 : 1] State_Name (input [1:0] Name_State); //Change our state binary values to make readability easier
     case(Name_State)
@@ -226,4 +307,35 @@ module Test_Bench;
       default:	State_Name = 	"ERROR";
     endcase
   endfunction
+  
+  task Print_Result (input [8*20 : 1] Name, input integer Error_Count);
+    begin
+      if(Error_Count == 0)
+        $display("  [ PASS ]  %0s", Name);
+      else
+        $display("  [ FAIL ]  %0s  (%0d errors)", Name, Error_Count);
+    end
+  endtask
+
+  task Print_Summary ();
+    begin
+      $display("\n==================================================");
+      $display("                 TEST SUMMARY");
+      $display("==================================================");
+      Print_Result("Recieve_Byte        ", Error_Recieve);
+      Print_Result("Send_Bad_Frame      ", Error_Bad_Frame);
+      Print_Result("Over_Run_Error_Check", Error_Over_Run);
+      Print_Result("Pop_And_Read_Check  ", Error_Pop_Read);
+      Print_Result("Sync_Latency        ", Error_Sync_Latency);
+      $display("==================================================");
+      if(Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency == 0)
+        $display("  OVERALL: ALL TESTS PASSED");
+      else
+        $display("  OVERALL: FAILURES DETECTED");
+      $display("==================================================\n");
+    end
+  endtask
+  
+  
+  
 endmodule

@@ -51,6 +51,7 @@ module Test_Bench;
     integer Error_Over_Run = 0;
     integer Error_Pop_Read = 0;
     integer Error_Sync_Latency = 0;
+    integer Error_Simul_Push_Pop = 0;
   	always #10 Clk_Tb = ~Clk_Tb;
   
   	initial begin
@@ -73,6 +74,8 @@ module Test_Bench;
       Reset_DUT();
       Pop_And_Read_Check();
       Reset_DUT();
+	  Simultaneous_Push_Pop_Check();
+      Reset_DUT();
       Measure_Sync_Latency(1'b1, Latency1);
       Measure_Sync_Latency(1'b0, Latency0);
       $display("\nMeasured Synchronizer Latency: Rise= %0d Clocks, Fall= %0d Clocks", Latency1, Latency0);
@@ -92,12 +95,82 @@ module Test_Bench;
       	$finish;
     
     end
-   
-  
-  task Simultaneous_Push_Pop_Check (); //Left off here /\ need to pop/read and push at the same time to check for errors
-    begin
+      
+  task Simultaneous_Push_Pop_Check ();
+  begin
+    reg [7:0] Byte_Value;
+    integer Pushed;
+    integer Popped;
+    integer Occ_Prev;
+    integer Occ_Now;
+    reg Saw_Concurrent;
+
+    Pop_Enable_Tb = 1'b0;
+    Pushed = 0;
+    Popped = 0;
+    Saw_Concurrent = 1'b0;
+
+    for (integer i = 0; i < 6; i = i + 1) begin
+      Byte_Value = 8'hA0 + i;
+      @(posedge Clk_Tb);
+      Rx_Data_Tb = 1'b0;
+      repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+      for (integer k = 0; k < 8; k = k + 1) begin
+        Rx_Data_Tb = Byte_Value[k];
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+      end
+      Rx_Data_Tb = 1'b1;
+      repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+      Pushed = Pushed + 1;
     end
-  endtask
+
+    Pop_Enable_Tb = 1'b1;
+
+    for (integer j = 0; j < 6; j = j + 1) begin
+      Byte_Value = 8'hB0 + j;
+      @(posedge Clk_Tb);
+      Rx_Data_Tb = 1'b0;
+      repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+      for (integer k = 0; k < 8; k = k + 1) begin
+        Rx_Data_Tb = Byte_Value[k];
+        repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+      end
+      Rx_Data_Tb = 1'b1;
+
+      Occ_Prev = DUT.Write_Pointer - DUT.Read_Pointer;
+      @(posedge Clk_Tb);
+
+      while (DUT.Byte_Valid !== 1'b1)
+        @(posedge Clk_Tb);
+
+      Occ_Now = DUT.Write_Pointer - DUT.Read_Pointer;
+
+      if ((DUT.Pop_Enable === 1'b1) && (Occ_Now == Occ_Prev))
+        Saw_Concurrent = 1'b1;
+
+      Pushed = Pushed + 1;
+      repeat (Over_Sample_Tb) @(posedge Clk_Tb);
+    end
+
+    while (DUT.Read_Pointer !== DUT.Write_Pointer)
+      @(posedge Clk_Tb);
+
+    Pop_Enable_Tb = 1'b0;
+    Popped = Pushed;
+
+    if (Saw_Concurrent !== 1'b1) begin
+      $display("\nFAIL: never observed a same-edge push and pop");
+      Errors = Errors + 1;
+      Error_Simul_Push_Pop = Error_Simul_Push_Pop + 1;
+    end else if ((DUT.Over_Run_Error === 1'b1) || (DUT.Write_Pointer !== DUT.Read_Pointer)) begin
+      $display("\nFAIL: fifo not drained or overrun Wr=%0d Rd=%0d OverRun=%0b", 
+               DUT.Write_Pointer, DUT.Read_Pointer, DUT.Over_Run_Error);
+      Errors = Errors + 1;
+      Error_Simul_Push_Pop = Error_Simul_Push_Pop + 1;
+    end else
+      $display("\nPASS: Simultaneous push and pop, Pushed=%0d Popped=%0d", Pushed, Popped);
+  end
+endtask
   
   
   
@@ -327,8 +400,9 @@ module Test_Bench;
       Print_Result("Over_Run_Error_Check", Error_Over_Run);
       Print_Result("Pop_And_Read_Check  ", Error_Pop_Read);
       Print_Result("Sync_Latency        ", Error_Sync_Latency);
+      Print_Result("Simul_Push_Pop      ", Error_Simul_Push_Pop);
       $display("==================================================");
-      if(Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency == 0)
+      if(Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency + Error_Simul_Push_Pop == 0)
         $display("  OVERALL: ALL TESTS PASSED");
       else
         $display("  OVERALL: FAILURES DETECTED");

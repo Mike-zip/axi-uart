@@ -172,9 +172,7 @@ module Test_Bench;
   end
 endtask
   
-  
-  
-  
+
   task Pop_And_Read_Check ();
     begin
       reg [7 : 0] Byte_Value;

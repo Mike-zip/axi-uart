@@ -1,6 +1,6 @@
 # axi-uart
 
-A UART peripheral with TX/RX FIFOs and an AXI4-Lite register interface, written in SystemVerilog. The plan is a small, readable core that a CPU can drive over AXI in a Zynq/MicroBlaze-style SoC, with the UART datapath kept independent of any vendor IP so it can also be used on its own.
+A UART peripheral with TX/RX FIFOs and an AXI4-Lite register interface, written in Verilog. The plan is a small, readable core that a CPU can drive over AXI in a Zynq/MicroBlaze-style SoC, with the UART datapath kept independent of any vendor IP so it can also be used on its own.
 
 This is a work in progress. Right now the transmit path is done and the rest is being built out module by module (see the roadmap below).
 

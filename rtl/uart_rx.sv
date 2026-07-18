@@ -11,10 +11,10 @@ module Uart_Rx #(
 )(
   input wire 			Clk,
   input wire 			Reset, 		//Active low
-  input reg  			Rx_Data,
+  input wire  			Rx_Data,    
   input wire 			Pop_Enable,
   output wire 			Rx_Ready,
-  output reg    		Frame_Error,
+  output reg  		    Frame_Error,
   output reg 			Over_Run_Error,
   output reg [7 : 0] 	Data_Out
 );

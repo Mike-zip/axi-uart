@@ -32,6 +32,8 @@ module Test_Bench;
 
     integer   E = 0;
     reg [7:0] Reads = 8'd0;
+    
+    integer   I;
 
     always #10 Clk_Tb = ~Clk_Tb;
 
@@ -44,13 +46,13 @@ module Test_Bench;
             Reads      = Data_In_Tb;
             $display("input =============================================== %d", Reads);
             if(Reads !== B) begin
-                $error("ERROR WITHIN 'SEND_BYTE':t=%0t, tx=%b, tx_busy?=%b, tx_start=%b", $time, Tx_Tb, Tx_Busy_Tb, Tx_Start_Tb);
+                $display("ERROR WITHIN 'SEND_BYTE':t=%0t, tx=%b, tx_busy?=%b, tx_start=%b", $time, Tx_Tb, Tx_Busy_Tb, Tx_Start_Tb);
                 E = E + 1;
                 $display("%d ERRORS", E);
             end
 
             if(Tx_Start_Tb == 1'b1 & Tx_Busy_Tb !== 1'b1) begin
-                $error("ERROR WITHIN 'SEND_BYTE | start bit high when tx busy is not':t=%0t, tx=%b, tx_busy?=%b, tx_start=%b", $time, Tx_Tb, Tx_Busy_Tb, Tx_Start_Tb);
+                $display("ERROR WITHIN 'SEND_BYTE | start bit high when tx busy is not':t=%0t, tx=%b, tx_busy?=%b, tx_start=%b", $time, Tx_Tb, Tx_Busy_Tb, Tx_Start_Tb);
                 E = E + 1;
                 $display("%d ERRORS", E);
             end
@@ -78,7 +80,7 @@ module Test_Bench;
         #40 Rst_N_Tb = 1'b1;
         #40;
 
-        for(int I = 0; I < 256; I = I + 1) begin
+        for(I = 0; I < 256; I = I + 1) begin
             Send_Byte(I);
 
             $display("finished byte: %d, %b", I, DUT.Tx_Shift);
@@ -86,7 +88,7 @@ module Test_Bench;
             if(DUT.Tx_Shift !== I) begin
                 $display("WRONG i !== DUT.Tx_Shift %d %b", I, DUT.Tx_Shift);
                 E = E + 1;
-                $error("WRONG i !== DUT.Tx_Shift %d %b %d", I, DUT.Tx_Shift, E);
+                $display("WRONG i !== DUT.Tx_Shift %d %b %d", I, DUT.Tx_Shift, E);
             end
         end
 

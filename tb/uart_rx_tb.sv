@@ -19,7 +19,7 @@ module Test_Bench;
   reg 			Pop_Enable_Tb;
   wire			Rx_Ready_Tb;
   wire			Frame_Error_Tb;
-  wire  		Over_Run_Error_Tb;
+  wire 		Over_Run_Error_Tb;
   wire  [7 : 0] Data_Out_Tb;
   
   Uart_Rx #(
@@ -56,6 +56,7 @@ module Test_Bench;
   
   	initial begin
         integer Latency0, Latency1;
+        integer B; 
     	Clk_Tb			= 1'b0;
   		Reset_Tb 		= 1'b0;
 		Rx_Data_Tb		= 8'd1;
@@ -65,7 +66,7 @@ module Test_Bench;
       
     	@(posedge Clk_Tb);
       Reset_DUT();
-      for(integer B = 0; B < 256; B = B + 1) begin
+      for(B = 0; B < 256; B = B + 1) begin
         Recieve_Byte	(B [7 : 0]); 
         Send_Bad_Frame	(B [7 : 0]);
       end
@@ -104,18 +105,21 @@ module Test_Bench;
     integer Occ_Prev;
     integer Occ_Now;
     reg Saw_Concurrent;
+    integer i; 
+    integer j; 
+    integer k; 
 
     Pop_Enable_Tb = 1'b0;
     Pushed = 0;
     Popped = 0;
     Saw_Concurrent = 1'b0;
 
-    for (integer i = 0; i < 6; i = i + 1) begin
+    for (i = 0; i < 6; i = i + 1) begin
       Byte_Value = 8'hA0 + i;
       @(posedge Clk_Tb);
       Rx_Data_Tb = 1'b0;
       repeat (Over_Sample_Tb) @(posedge Clk_Tb);
-      for (integer k = 0; k < 8; k = k + 1) begin
+      for (k = 0; k < 8; k = k + 1) begin
         Rx_Data_Tb = Byte_Value[k];
         repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       end
@@ -126,12 +130,12 @@ module Test_Bench;
 
     Pop_Enable_Tb = 1'b1;
 
-    for (integer j = 0; j < 6; j = j + 1) begin
+    for (j = 0; j < 6; j = j + 1) begin
       Byte_Value = 8'hB0 + j;
       @(posedge Clk_Tb);
       Rx_Data_Tb = 1'b0;
       repeat (Over_Sample_Tb) @(posedge Clk_Tb);
-      for (integer k = 0; k < 8; k = k + 1) begin
+      for (k = 0; k < 8; k = k + 1) begin
         Rx_Data_Tb = Byte_Value[k];
         repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       end
@@ -172,18 +176,20 @@ module Test_Bench;
   end
 endtask
   
-
   task Pop_And_Read_Check ();
     begin
       reg [7 : 0] Byte_Value;
+      integer i; 
+      integer k; 
+      integer o; 
       Pop_Enable_Tb = 1'b0;
       
-      for(integer i = 0; i < Fifo_Slots_Tb; i = i + 1) begin
+      for(i = 0; i < Fifo_Slots_Tb; i = i + 1) begin
         Byte_Value = i[7 : 0];
         @(posedge Clk_Tb);
         Rx_Data_Tb = 1'b0;
         repeat (Over_Sample_Tb) @(posedge Clk_Tb);
-        for(integer k = 0; k < 8; k = k + 1) begin
+        for(k = 0; k < 8; k = k + 1) begin
           Rx_Data_Tb = Byte_Value[k];
           repeat (Over_Sample_Tb) @(posedge Clk_Tb);
         end
@@ -191,7 +197,7 @@ endtask
         repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       end
       
-      for(integer o = 0; o < 16; o = o + 1) begin
+      for(o = 0; o < 16; o = o + 1) begin
       Pop_Enable_Tb = 1'b1;
       @(posedge Clk_Tb);
       Pop_Enable_Tb = 1'b0;
@@ -212,13 +218,17 @@ endtask
     begin
       integer Visible;
       reg [7:0]Fifo_Visible [0:16];
+      integer i; 
+      integer k; 
+      integer m; 
+      integer p; 
       
       Pop_Enable_Tb = 1'b0;
-      for(integer i = 0; i < Fifo_Slots_Tb + 1; i = i + 1) begin
+      for(i = 0; i < Fifo_Slots_Tb + 1; i = i + 1) begin
         @(posedge Clk_Tb);
         Rx_Data_Tb = 1'b0;
         repeat (Over_Sample_Tb) @(posedge Clk_Tb);
-        for(integer k = 0; k < 8; k = k + 1) begin
+        for(k = 0; k < 8; k = k + 1) begin
           Rx_Data_Tb = 1'b1;
           repeat (Over_Sample_Tb) @(posedge Clk_Tb);
         end
@@ -228,8 +238,8 @@ endtask
       
       
       Visible = DUT.Over_Run_Error;
-      for(integer m = 0; m < 16; m = m + 1) begin
-        for(integer p = 0; p < 8; p = p + 1) begin
+      for(m = 0; m < 16; m = m + 1) begin
+        for(p = 0; p < 8; p = p + 1) begin
          Fifo_Visible[m] [p] = DUT.Fifo_Memory_Hold[m][p];
         
       end
@@ -248,9 +258,9 @@ endtask
     endtask
   
   
-  
   task Send_Bad_Frame (input [7 : 0] Bits);   
     begin
+      integer i; 
       Rx_Data_Tb = 1'b1;
       repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       Rx_Data_Tb = 1'b0;
@@ -269,7 +279,7 @@ endtask
       //Bad Stop Bit Below
       Rx_Data_Tb = 1'b0;
       repeat(Over_Sample_Tb) @(posedge Clk_Tb);
-      for(integer i = 0; i < 8; i = i + 1) begin
+      for(i = 0; i < 8; i = i + 1) begin
         Rx_Data_Tb = Bits[i];
         repeat (Over_Sample_Tb) @(posedge Clk_Tb);
       end
@@ -319,11 +329,12 @@ endtask
   
   task Recieve_Byte (input [7 : 0] Bits); //Test all cases for recieving a byte
     begin
+      integer i; 
       @(posedge Clk_Tb);
       $display("START VALUES: Rx_Shift_In: %b State: %s", DUT.Rx_Shift_In, State_Name(DUT.State));
       Rx_Data_Tb = 1'b0;
       repeat(Over_Sample_Tb) @(posedge Clk_Tb);
-      for(integer i = 0; i < 8; i = i + 1) begin
+      for(i = 0; i < 8; i = i + 1) begin
         
         Rx_Data_Tb = Bits[i];
         repeat(Over_Sample_Tb) @(posedge Clk_Tb);    
@@ -342,7 +353,7 @@ endtask
       if(Bits !== Data_Out_Tb) begin
         
       	Errors = Errors + 1;
-	      Error_Recieve = Error_Recieve + 1;
+	    Error_Recieve = Error_Recieve + 1;
         $display("\nFAIL: bits != data out Bits: %b, Data_Out_Tb: %b", Bits, Data_Out_Tb);
          
       end
@@ -391,7 +402,7 @@ endtask
   task Print_Summary ();
     begin
       $display("\n==================================================");
-      $display("                 TEST SUMMARY");
+      $display("                  TEST SUMMARY");
       $display("==================================================");
       Print_Result("Recieve_Byte        ", Error_Recieve);
       Print_Result("Send_Bad_Frame      ", Error_Bad_Frame);

@@ -46,7 +46,7 @@ module Test_Bench;
 
   initial begin 
     #Timeout_Ns;
-    $display("\n***TIMOUT*** %0d", Timeout_Ns);
+    $display("\n***TIMEOUT*** %0d", Timeout_Ns);
     $finish;
   end
 

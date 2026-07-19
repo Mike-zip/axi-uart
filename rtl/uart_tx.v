@@ -7,16 +7,31 @@ module Uart_Tx #(
 )(
   input  wire       	Clk,
   input  wire       	Rst_N,
-
   input  wire [7:0] 	Data_In,
   input  wire       	Push_Enable,
   output wire 	  		Tx_Full,
+  output wire 			Occupancy,
   output reg        	Tx_Busy,
   output reg        	Tx          //(bytes to bits)
 );
+
+  initial begin
+    if((Fifo_Slots & (Fifo_Slots - 1)) != 0) begin
+      $display("<*ERROR*> 'Fifo_Slots' [%0d] must be a power of 2", Fifo_Slots);
+      $finish;
+    end
+  end
+
   localparam Baud_Division = Clk_Frequency / Baud_Rate;
   integer    Baud_Count;
   wire       Baud_Tick;
+
+  initial begin
+    if(Baud_Division < 1) begin
+      $display("<ERROR> Sample_Division [%0d] is too small: Clk_Frequency [%0d] must be significantly greater than {Baud_Rate * Over_Sample [%0d]}", Baud_Division, Clk_Frequency, Baud_Rate);
+      $finish;
+    end
+  end
 
   always @(posedge Clk or negedge Rst_N) begin
     if(!Rst_N)
@@ -93,12 +108,12 @@ module Uart_Tx #(
 
   localparam Storage_Log = $clog2(Fifo_Slots);
 
-  reg [7 : 0] Fifo_Memory_Hold [0 : Fifo_Slots - 1];
+  reg [7 : 0] 			Fifo_Memory_Hold [0 : Fifo_Slots - 1];
   reg [Storage_Log : 0] Write_Pointer;
   reg [Storage_Log : 0] Read_Pointer;
-  reg Fifo_Pop;
-  wire [Storage_Log : 0] Occupancy = Write_Pointer - Read_Pointer;
+  reg 					Fifo_Pop;
   wire Fifo_Empty = (Write_Pointer == Read_Pointer);
+  assign Occupancy = Write_Pointer - Read_Pointer;
   assign Tx_Full  = (Write_Pointer[Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer[Storage_Log] != Read_Pointer[Storage_Log]);
 
   always @(posedge Clk or negedge Rst_N) begin

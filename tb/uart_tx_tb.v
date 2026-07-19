@@ -5,15 +5,16 @@ module Test_Bench;
   localparam Clk_Frequency_Tb = 50_000_000;
   localparam Baud_Rate_Tb     = 5_000_000;
   localparam Fifo_Slots_Tb    = 16;
+  localparam Timeout_Ns       = 2_000_000; //About 3.5x normal full run time
 
-
-  reg       Clk_Tb;
-  reg       Rst_N_Tb;
-  reg [7:0] Data_In_Tb;
-  reg       Push_Enable_Tb;
-  wire      Tx_Full_Tb;
-  wire      Tx_Busy_Tb;
-  wire      Tx_Tb;
+  reg       	Clk_Tb;
+  reg       	Rst_N_Tb;
+  reg [7 : 0] 	Data_In_Tb;
+  reg       	Push_Enable_Tb;
+  wire      	Tx_Full_Tb;
+  wire      	Tx_Busy_Tb;
+  wire [4 : 0]	Occupancy_Tb;
+  wire      	Tx_Tb;
 
   Uart_Tx #(
     .Clk_Frequency (Clk_Frequency_Tb),
@@ -26,21 +27,29 @@ module Test_Bench;
     .Push_Enable (Push_Enable_Tb),
     .Tx_Full     (Tx_Full_Tb),
     .Tx_Busy     (Tx_Busy_Tb),
+    .Occupancy   (Occupancy_Tb),
     .Tx          (Tx_Tb)
   );
 
-  integer   E = 0;
-  reg [7:0] Reads = 8'd0;
-
-  integer   Error_Send_Byte   = 0;
-  integer   Error_Burst_Order = 0;
-  integer   Error_Fifo_Full   = 0;
+  integer   	E = 0;
+  reg  [7 : 0] 	Reads = 8'd0;
+  integer   	Error_Send_Byte   = 0;
+  integer   	Error_Burst_Order = 0;
+  integer   	Error_Fifo_Full   = 0;
 
   integer   I;
   integer   J;
-  reg [7:0] Expected [0:19];
+  reg [7 : 0] Expected [0:19];
 
   always #10 Clk_Tb = ~Clk_Tb;
+
+
+  initial begin 
+    #Timeout_Ns;
+    $display("\n***TIMOUT*** %0d", Timeout_Ns);
+    $finish;
+  end
+
 
 
   initial begin
@@ -154,6 +163,7 @@ module Test_Bench;
         #1;
         Data_In_Tb     = 8'hD0 + J[7:0];
         Push_Enable_Tb = 1'b1;
+        Print_Occupancy();
       end
       @(posedge Clk_Tb);
       #1;
@@ -180,6 +190,12 @@ module Test_Bench;
         $display("  [ PASS ]  %0s", Name);
       else
         $display("  [ FAIL ]  %0s  (%0d errors)", Name, Error_Count);
+    end
+  endtask
+
+  task Print_Occupancy();
+    begin
+      $display("Occupancy: %0d / %0d slots used", Occupancy_Tb, Fifo_Slots_Tb);
     end
   endtask
 

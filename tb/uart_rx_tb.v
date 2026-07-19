@@ -12,6 +12,7 @@ module Test_Bench;
   localparam	Baud_Rate_Tb		= 5_000_000;
   localparam	Over_Sample_Tb		= 10;
   localparam	Fifo_Slots_Tb		= 16;
+  localparam    Timeout_Ns          = 3_500_000; //About 2.7x normal full run time
 
   reg 			Clk_Tb;
   reg 			Reset_Tb;
@@ -21,6 +22,7 @@ module Test_Bench;
   wire			Frame_Error_Tb;
   wire 			Over_Run_Error_Tb;
   wire  [7 : 0] Data_Out_Tb;
+  wire  [4 : 0] Occupancy_Tb;
 
   Uart_Rx #(
     .Clk_Frequency(Clk_Frequency_Tb),
@@ -35,7 +37,8 @@ module Test_Bench;
     .Rx_Ready(Rx_Ready_Tb),
     .Frame_Error(Frame_Error_Tb),
     .Over_Run_Error(Over_Run_Error_Tb),
-    .Data_Out(Data_Out_Tb)
+    .Data_Out(Data_Out_Tb),
+    .Occupancy(Occupancy_Tb)
   );
 
   initial begin
@@ -55,6 +58,14 @@ module Test_Bench;
   integer B;
 
   always #10 Clk_Tb = ~Clk_Tb;
+
+
+  initial begin
+    #Timeout_Ns;
+    $display("***TIMEOUT*** %0d", Timeout_Ns);
+    $finish;
+  end
+
 
   initial begin
     Clk_Tb			= 1'b0;
@@ -94,6 +105,7 @@ module Test_Bench;
       $display("\nPASS: ALL CASES PASSED\n");
     else
       $display("\nFAIL: Erros<%0d>\n", Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency + Error_Simultaneous_Push_Pop + Error_Reset_Mid_Frame);
+    Print_Occupancy();
     Print_Summary();
     $finish;
   end 
@@ -430,6 +442,14 @@ module Test_Bench;
         $display("  [ FAIL ]  %0s  (%0d errors)", Name, Error_Count);
     end
   endtask
+
+
+  task Print_Occupancy;
+    begin
+      $display("Occupancy: %0d / %0d slots used", Occupancy_Tb, Fifo_Slots_Tb);
+    end
+  endtask
+
 
   task Print_Summary ();
     begin

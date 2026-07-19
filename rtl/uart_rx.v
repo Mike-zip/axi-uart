@@ -14,45 +14,60 @@ module Uart_Rx #(
   input wire  			Rx_Data,    
   input wire 			Pop_Enable,
   output wire 			Rx_Ready,
+  output wire          [$clog2(Fifo_Slots):0] Occupancy,
   output reg  		    Frame_Error,
   output reg 			Over_Run_Error,
   output reg [7 : 0] 	Data_Out
 );
-  
+
+  initial begin
+    if((Fifo_Slots & (Fifo_Slots - 1)) != 0) begin
+      $display("<*ERROR*> 'Fifo_Slots' [%0d] must be a power of 2", Fifo_Slots);
+      $finish;
+    end
+  end
+
   localparam 	Sample_Division = Clk_Frequency / (Baud_Rate * Over_Sample);
   integer 		Sample_Count;
   reg			Sample_Tick; //Pulses at the oversample rate
-  
+
+  initial begin
+    if(Sample_Division < 1) begin
+      $display("<ERROR> Sample_Division [%0d] is too small: Clk_Frequency [%0d] must be significantly greater than {Baud_Rate * Over_Sample [%0d]}", Sample_Division, Clk_Frequency, Baud_Rate * Over_Sample);
+      $finish;
+    end
+  end
+
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
-    	Sample_Count	<= 0;
-      	Sample_Tick  	<= 1'b0;
+      Sample_Count	<= 0;
+      Sample_Tick  	<= 1'b0;
     end
     else if(Sample_Count == Sample_Division - 1) begin
-    	Sample_Count	<= 0;
-      	Sample_Tick  	<= 1'b1;
+      Sample_Count	<= 0;
+      Sample_Tick  	<= 1'b1;
     end
     else begin
-    	Sample_Count	<= Sample_Count + 1'b1;
-      	Sample_Tick		<= 1'b0;
+      Sample_Count	<= Sample_Count + 1'b1;
+      Sample_Tick		<= 1'b0;
     end
   end
-  
+
   reg Stable1, Stable2;
-  
+
   always @(posedge Clk or negedge Reset) begin 
     if(!Reset) begin
-    	Stable1		<= 1'b0;
-      	Stable2		<= 1'b0;
+      Stable1		<= 1'b0;
+      Stable2		<= 1'b0;
     end
     else begin
-      	Stable1		<= Rx_Data;
-      	Stable2		<= Stable1;
+      Stable1		<= Rx_Data;
+      Stable2		<= Stable1;
     end
   end
-  
+
   wire Rx_Stable_In = Stable2;
-  
+
   localparam    Idle	= 2'd0, Start	= 2'd1, Data 	= 2'd2, Stop	= 2'd3; //0,1,2,3 ___IDLE,START,DATA,STOP
   localparam	Middle_Of_Bit = (Over_Sample / 2) - 1;
   reg [1 : 0] 	State;
@@ -61,63 +76,63 @@ module Uart_Rx #(
   reg [4 : 0]	Sample_Index;
   reg [7 : 0]	Stable_Byte;
   reg 			Byte_Valid;
-  
+
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
-    	State <= Idle;
-      	Rx_Shift_In		<= 8'd0;
-      	Bit_Index		<= 4'd0;
-      	Sample_Index	<= 5'd0;
-      	Stable_Byte		<= 8'd0;
-      	Byte_Valid		<= 1'b0;
-      	Frame_Error		<= 1'b0;
+      State <= Idle;
+      Rx_Shift_In		<= 8'd0;
+      Bit_Index		<= 4'd0;
+      Sample_Index	<= 5'd0;
+      Stable_Byte		<= 8'd0;
+      Byte_Valid		<= 1'b0;
+      Frame_Error		<= 1'b0;
     end
-    
+
     else begin
-    	Byte_Valid		<= 1'b0;
+      Byte_Valid		<= 1'b0;
       if(Sample_Tick) begin
         case(State)
-          
+
           Idle: begin
-          	Sample_Index	<= 5'd0;
+            Sample_Index	<= 5'd0;
             if(Rx_Stable_In == 1'b0)
-            	State	<= Start;
+              State	<= Start;
           end
-          
+
           Start: begin
             if(Sample_Index == Middle_Of_Bit) begin
               if(Rx_Stable_In == 1'b0) begin
-              	State			<= Data;									//we leave at Middle of the bit 
+                State			<= Data;									//we leave at Middle of the bit 
                 Sample_Index	<= 5'd0;									//which means our index zero is
                 Bit_Index		<= 4'd0;									//from the middle of the bit
               end															//			^
               else 															//			^
-              	State	<= Idle;											//			^
+                State	<= Idle;											//			^
             end																//			^
             else															//			^
               Sample_Index	<= Sample_Index + 1;							//			^
           end																//			^
-          																	//			^
+          //			^
           Data: begin														//			^
             if(Sample_Index == Over_Sample - 1) begin 						//pick up at our index zero
-            	Sample_Index	<= 5'd0;									//which is from the middle 
-              	Rx_Shift_In		<= {Rx_Stable_In, Rx_Shift_In[7:1]};		//of the bit
-            	if(Bit_Index == 4'd7)
-            		State		<= Stop;
-            	else
-              		Bit_Index	<= Bit_Index + 1;
+              Sample_Index	<= 5'd0;									//which is from the middle 
+              Rx_Shift_In		<= {Rx_Stable_In, Rx_Shift_In[7:1]};		//of the bit
+              if(Bit_Index == 4'd7)
+                State		<= Stop;
+              else
+                Bit_Index	<= Bit_Index + 1;
             end
             else
-            	Sample_Index	<= Sample_Index + 1;
+              Sample_Index	<= Sample_Index + 1;
           end
-          
+
           Stop: begin
             if(Sample_Index == Over_Sample) begin
-            	Sample_Index	<= 5'd0;
-              	State			<= Idle;
-              	Byte_Valid		<= 1'b1;
-              	Stable_Byte		<= Rx_Shift_In;
-              	Frame_Error	    <= (Rx_Stable_In == 1'b0);
+              Sample_Index	<= 5'd0;
+              State			<= Idle;
+              Byte_Valid		<= 1'b1;
+              Stable_Byte		<= Rx_Shift_In;
+              Frame_Error	    <= (Rx_Stable_In == 1'b0);
             end
             else
               Sample_Index	<= Sample_Index + 1; 
@@ -126,25 +141,27 @@ module Uart_Rx #(
       end
     end
   end
-  
+
   localparam Storage_Log = $clog2(Fifo_Slots);
-  
+
   reg [7 : 0] Fifo_Memory_Hold [0 : Fifo_Slots - 1];
   reg [Storage_Log : 0] Write_Pointer;
   reg [Storage_Log : 0] Read_Pointer;
-  
-  
-  
+
+
+
   wire Fifo_Empty 	= (Write_Pointer == Read_Pointer);
   wire Fifo_Full	= (Write_Pointer [Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer [Storage_Log] != Read_Pointer [Storage_Log]);
   assign Rx_Ready = !Fifo_Empty;		//This is to tell when there is data waiting in the 'Fifo_Memory_Hold'
-  
+
+  assign Occupancy = Write_Pointer - Read_Pointer;
+
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
- 		Write_Pointer	<= 5'd0;
-		Read_Pointer	<= 5'd0;
-		Data_Out		<= 8'd0;
-      	Over_Run_Error  <= 1'b0;
+      Write_Pointer	<= 5'd0;
+      Read_Pointer	<= 5'd0;
+      Data_Out		<= 8'd0;
+      Over_Run_Error  <= 1'b0;
     end  
     else begin
       if(Byte_Valid & !Frame_Error) begin
@@ -157,7 +174,7 @@ module Uart_Rx #(
           Over_Run_Error	<= 1'b1; 
       end
       if(Pop_Enable & !Fifo_Empty) begin
-      	Data_Out		<= Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
+        Data_Out		<= Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
         Read_Pointer	<= Read_Pointer + 1;
       end
     end

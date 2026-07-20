@@ -258,10 +258,10 @@ module Test_Bench;
       $display("\n==================================================");
       $display("                  TEST SUMMARY");
       $display("==================================================");
-      Print_Result("Send_Byte_Loop       ", Error_Send_Byte);
-      Print_Result("Burst_Order_Check    ", Error_Burst_Order);
-      Print_Result("Fifo_Full_Check      ", Error_Fifo_Full);
-      Print_Result("Mid_Frame_Reset_Check", Error_Mid_Frame);
+      Print_Result("Send_Byte_Loop      ", Error_Send_Byte);
+      Print_Result("Burst_Order_Check   ", Error_Burst_Order);
+      Print_Result("Fifo_Full_Check     ", Error_Fifo_Full);
+      Print_Result("Mid_Frame_Reset     ", Error_Mid_Frame);
       $display("==================================================");
       if(Error_Send_Byte + Error_Burst_Order + Error_Fifo_Full + Error_Mid_Frame == 0)
         $display("  OVERALL: ALL TESTS PASSED");

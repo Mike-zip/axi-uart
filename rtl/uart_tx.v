@@ -10,7 +10,7 @@ module Uart_Tx #(
   input  wire [7:0] 	Data_In,
   input  wire       	Push_Enable,
   output wire 	  		Tx_Full,
-  output wire 			[$clog2(Fifo_Slots - 1) : 0] Occupancy,
+  output wire 			[$clog2(Fifo_Slots) : 0] Occupancy,
   output reg        	Tx_Busy,
   output reg        	Tx          //(bytes to bits)
 );

@@ -166,9 +166,9 @@ module Uart_Rx #(
     else begin
       if(Byte_Valid & !Frame_Error) begin
         if(!Fifo_Full) begin
-          Fifo_Memory_Hold[Write_Pointer[Storage_Log - 1 : 0]]	<= Stable_Byte;
+          Fifo_Memory_Hold[Write_Pointer[Storage_Log - 1 : 0]]	<= Stable_Byte; 
           Write_Pointer		<= Write_Pointer + 1;
-          Over_Run_Error	<= 1'b0;
+          Over_Run_Error	<= 1'b0; //Only clears when a new byte is written
         end
         else
           Over_Run_Error	<= 1'b1; 

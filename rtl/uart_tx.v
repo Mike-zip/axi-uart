@@ -28,7 +28,7 @@ module Uart_Tx #(
 
   initial begin
     if(Baud_Division < 1) begin
-      $display("<ERROR> Sample_Division [%0d] is too small: Clk_Frequency [%0d] must be significantly greater than {Baud_Rate * Over_Sample [%0d]}", Baud_Division, Clk_Frequency, Baud_Rate);
+      $display("<ERROR> Baud_Division [%0d] is too small: Clk_Frequency [%0d] must be significantly greater than Baud_Rate [%0d]", Baud_Division, Clk_Frequency, Baud_Rate);
       $finish;
     end
   end

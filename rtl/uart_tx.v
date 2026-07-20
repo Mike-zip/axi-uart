@@ -1,4 +1,5 @@
-// Michael Marquis
+//Michael Marquis
+//UART_TX_Design
 
 module Uart_Tx #(
   parameter Clk_Frequency = 50_000_000,

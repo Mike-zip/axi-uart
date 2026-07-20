@@ -1,3 +1,5 @@
+//Michael Marquis
+
 `timescale 1ns/1ps
 
 module Test_Bench;
@@ -13,7 +15,7 @@ module Test_Bench;
   reg       	Push_Enable_Tb;
   wire      	Tx_Full_Tb;
   wire      	Tx_Busy_Tb;
-  wire [4 : 0]	Occupancy_Tb;
+  wire [$clog2(Fifo_Slots_Tb):0] Occupancy_Tb;
   wire      	Tx_Tb;
 
   Uart_Tx #(
@@ -31,7 +33,6 @@ module Test_Bench;
     .Tx          (Tx_Tb)
   );
 
-  integer   	E = 0;
   reg  [7 : 0] 	Reads = 8'd0;
   integer   	Error_Send_Byte   = 0;
   integer   	Error_Burst_Order = 0;
@@ -73,9 +74,8 @@ module Test_Bench;
       @(posedge Clk_Tb);
       if(DUT.Tx_Shift !== I) begin
         $display("WRONG i !== DUT.Tx_Shift %d %b", I, DUT.Tx_Shift);
-        E               = E + 1;
         Error_Send_Byte = Error_Send_Byte + 1;
-        $display("WRONG i !== DUT.Tx_Shift %d %b %d", I, DUT.Tx_Shift, E);
+        $display("WRONG i !== DUT.Tx_Shift %d %b %d", I, DUT.Tx_Shift);
       end
     end
 
@@ -84,9 +84,6 @@ module Test_Bench;
     Mid_Frame_Reset_Check();
     #500;
     $display("finished at %0t ns", $time);
-    if(E == 0) begin
-      $display("All test passed with %d errors", E);
-    end
     Print_Summary();
     $finish;
   end
@@ -147,9 +144,7 @@ module Test_Bench;
       $display("input =============================================== %d", Reads);
       if(Reads !== B) begin
         $display("ERROR WITHIN 'SEND_BYTE':t= %0t, Tx= %b, Tx_Busy?= %b, Push_Enable= %b", $time, Tx_Tb, Tx_Busy_Tb, Push_Enable_Tb);
-        E               = E + 1;
         Error_Send_Byte = Error_Send_Byte + 1;
-        $display("%d ERRORS", E);
       end
 
       if(Push_Enable_Tb == 1'b1 & Tx_Busy_Tb !== 1'b1) begin
@@ -189,7 +184,6 @@ module Test_Bench;
         wait(Tx_Busy_Tb == 1'b1);
         if (DUT.Tx_Shift !== Expected[J]) begin
           $display("FAIL Burst_Order_Check Index= %0d: Expected %h got %h", J, Expected[J], DUT.Tx_Shift);
-          E                 = E + 1;
           Error_Burst_Order = Error_Burst_Order + 1;
         end
         else
@@ -214,7 +208,6 @@ module Test_Bench;
 
       if (DUT.Write_Pointer - DUT.Read_Pointer > Fifo_Slots_Tb) begin
         $display("FAIL Fifo_Full_Check: occupancy exceeded depth (Write_Pointer= %0d Read_Pointer= %0d)", DUT.Write_Pointer, DUT.Read_Pointer);
-        E               = E + 1;
         Error_Fifo_Full = Error_Fifo_Full + 1;
       end
       else

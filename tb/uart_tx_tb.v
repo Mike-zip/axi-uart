@@ -125,7 +125,7 @@ module Test_Bench;
       end
 
       if(DUT.State !== 2'd0) begin
-        $display("\nFAIL Mid_Frame_Reset_Check: State not back to idle: State = %0d", DUT.State);
+        $display("\nFAIL Mid_Frame_Reset_Check: State not back to idle: State = %0s", State_Name(DUT.State)); 
         Error_Mid_Frame = Error_Mid_Frame + 1;
       end
 

@@ -36,10 +36,12 @@ module Test_Bench;
   integer   	Error_Send_Byte   = 0;
   integer   	Error_Burst_Order = 0;
   integer   	Error_Fifo_Full   = 0;
+  integer 		Error_Mid_Frame	  = 0;
 
   integer   I;
   integer   J;
   reg [7 : 0] Expected [0:19];
+  localparam Baud_Division_Tb = Clk_Frequency_Tb / Baud_Rate_Tb;
 
   always #10 Clk_Tb = ~Clk_Tb;
 
@@ -79,7 +81,7 @@ module Test_Bench;
 
     Burst_Order_Check();
     Fifo_Full_Check();
-
+    Mid_Frame_Reset_Check();
     #500;
     $display("finished at %0t ns", $time);
     if(E == 0) begin
@@ -92,6 +94,47 @@ module Test_Bench;
   always @(posedge DUT.Baud_Tick) begin
     $display("t= %0t, Tx= %b, Tx_Busy?= %b, Push_Enable= %b", $time, Tx_Tb, Tx_Busy_Tb, Push_Enable_Tb);
   end
+
+
+  task Mid_Frame_Reset_Check;
+    reg [7:0] Byte_Value;
+    begin
+      Byte_Value = 8'hA5;
+
+      #25 Rst_N_Tb = 1'b0;
+      #40 Rst_N_Tb = 1'b1;
+      #40;
+
+      Data_In_Tb     = Byte_Value;
+      Push_Enable_Tb = 1'b1;
+      @(posedge Clk_Tb);
+      #1;
+      Push_Enable_Tb = 1'b0;
+
+      wait(Tx_Busy_Tb == 1'b1);                          //wait for the frame to start
+      repeat (Baud_Division_Tb / 2) @(posedge Clk_Tb);    
+
+      Rst_N_Tb = 1'b0;
+      repeat (10) @(posedge Clk_Tb);
+      Rst_N_Tb = 1'b1;
+      @(posedge Clk_Tb);
+
+      if(DUT.Write_Pointer !== 0 || DUT.Read_Pointer !== 0) begin
+        $display("\nFAIL Mid_Frame_Reset_Check: pointers not cleared: WP = %0d, RP = %0d", DUT.Write_Pointer, DUT.Read_Pointer);
+        Error_Mid_Frame = Error_Mid_Frame + 1;
+      end
+
+      if(DUT.State !== 2'd0) begin
+        $display("\nFAIL Mid_Frame_Reset_Check: State not back to idle: State = %0d", DUT.State);
+        Error_Mid_Frame = Error_Mid_Frame + 1;
+      end
+
+      if(Tx_Busy_Tb !== 1'b0) begin
+        $display("\nFAIL Mid_Frame_Reset_Check: Tx_Busy not cleared: %b", Tx_Busy_Tb);
+        Error_Mid_Frame = Error_Mid_Frame + 1;
+      end
+    end
+  endtask
 
 
   task Send_Byte(input [7:0] B);
@@ -199,16 +242,28 @@ module Test_Bench;
     end
   endtask
 
+
+  function [8*5 : 1] State_Name (input [1:0] Name_State); 
+    case(Name_State)
+      2'd0:		State_Name =	"Idle";
+      2'd1:		State_Name =	"Start";
+      2'd2:		State_Name = 	"Data";
+      2'd3:		State_Name = 	"Stop";
+      default:	State_Name = 	"ERROR";
+    endcase
+  endfunction               
+
   task Print_Summary ();
     begin
       $display("\n==================================================");
       $display("                  TEST SUMMARY");
       $display("==================================================");
-      Print_Result("Send_Byte_Loop      ", Error_Send_Byte);
-      Print_Result("Burst_Order_Check   ", Error_Burst_Order);
-      Print_Result("Fifo_Full_Check     ", Error_Fifo_Full);
+      Print_Result("Send_Byte_Loop       ", Error_Send_Byte);
+      Print_Result("Burst_Order_Check    ", Error_Burst_Order);
+      Print_Result("Fifo_Full_Check      ", Error_Fifo_Full);
+      Print_Result("Mid_Frame_Reset_Check", Error_Mid_Frame);
       $display("==================================================");
-      if(Error_Send_Byte + Error_Burst_Order + Error_Fifo_Full == 0)
+      if(Error_Send_Byte + Error_Burst_Order + Error_Fifo_Full + Error_Mid_Frame == 0)
         $display("  OVERALL: ALL TESTS PASSED");
       else
         $display("  OVERALL: FAILURES DETECTED");

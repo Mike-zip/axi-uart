@@ -3,8 +3,8 @@
 
 
 module Uart_Axi_Lite #(
-  parameter Address_Width = 4;
-  parameter Data_Width	= 32;
+  parameter Address_Width = 4,
+  parameter Data_Width	= 32
 )(
   input wire Clk,
   input wire Rst_N,
@@ -17,7 +17,7 @@ module Uart_Axi_Lite #(
   //W Channel
   input wire [Data_Width - 1 : 0]		Write_Data,
   input wire 							Write_Data_Valid,
-  output reg							Write_Ready,
+  output reg							Write_Data_Ready,
 
   //B Channel
   output reg [1 : 0]					Bresp,
@@ -58,7 +58,8 @@ module Uart_Axi_Lite #(
 
   //Control Register
   reg [Data_Width - 1 : 0]  	Control_Register;
-
+  reg Write_Address_Done;
+  reg Write_Data_Done;
   //Status Register : Purely Combinational to show live Status
   wire [Data_Width - 1 : 0] 		  Status_Register;
   assign Status_Register[0]			= Tx_Busy;
@@ -75,16 +76,49 @@ module Uart_Axi_Lite #(
   always @(posedge Clk or negedge Rst_N) begin
     if(!Rst_N) begin
       Write_Address_Ready	<= 1'b0;
-      Write_Ready			<= 1'b0;
+      Write_Data_Ready		<= 1'b0;
       Bvalid				<= 1'b0;
       Bresp					<= 2'b00;
       Tx_Data				<= 8'd0;
       Tx_Push_Enable		<= 1'b0;
       Control_Register		<= {Data_Width{1'b0}};
+      Write_Address_Done	<= 1'b0;
+      Write_Data_Done		<= 1'b0;
     end
     else begin
       Tx_Push_Enable		<= 1'b0;
-      //TODO: AW, W, decode & act, enable B then clear B
+      if(Write_Address_Valid && !Write_Address_Done) begin
+        Write_Address_Ready	<= 1'b1;
+        Write_Address_Done	<= 1'b1;
+      end
+      else
+        Write_Address_Ready	<= 1'b0;
+
+      if(Write_Data_Valid && !Write_Data_Done) begin
+        Write_Data_Ready	<= 1'b1;
+        Write_Data_Done		<= 1'b1;
+      end
+      else
+        Write_Data_Ready		<= 1'b0;
+      if(Write_Address_Done && Write_Data_Done && !Bvalid) begin
+        case(Write_Address)
+          Address_Tx_Data : begin
+            Tx_Data				<= Write_Data[7 : 0];
+            Tx_Push_Enable		<= 1'b1;
+          end
+          Address_Control :  	
+            Control_Register 	<= Write_Data;
+          default :				
+            Bresp 	<= 2'b00; 
+        endcase
+        Bvalid	<= 1'b1;
+        Bresp	<= 2'b00;
+      end
+      if(Bvalid && Bready) begin
+        Bvalid				<= 1'b0;
+        Write_Address_Done	<= 1'b0;
+        Write_Data_Done		<= 1'b0;
+      end
     end
   end
 
@@ -92,18 +126,34 @@ module Uart_Axi_Lite #(
   always @(posedge Clk or negedge Rst_N) begin
     if(!Rst_N) begin
       Read_Address_Ready	<= 1'b0;
-      RValid				<= 1'b0;
+      Rvalid				<= 1'b0;
       Rresp					<= 2'b00;
       Read_Data				<= {Data_Width{1'b0}};
       Rx_Pop_Enable			<= 1'b0;
     end
     else begin
       Rx_Pop_Enable			<= 1'b0;
-      //TODO: accept AR, decode, drive R
-    end
-  end
+      Read_Address_Ready	<= 1'b0;
 
-endmodule
+      if(Read_Address_Valid && !Rvalid) begin
+        Read_Address_Ready	<= 1'b1;
+        Rresp				<= 2'b00;
+        case(Read_Address)
+          Address_Status  	:
+            Read_Data	<= Status_Register;
+          Address_Control 	:
+            Read_Data	<= Control_Register;
+          default 			: 
+            Read_Data 	<= {Data_Width{1'b0}};
+        endcase
+        Rvalid	<= 1'b1;
+      end
+      if(Rvalid && Rready)
+        Rvalid	<= 1'b0;
+
+    end
+
+    endmodule
 
 
 

@@ -17,7 +17,7 @@ module Uart_Rx #(
   output wire          [$clog2(Fifo_Slots):0] Occupancy,
   output reg  		    Frame_Error,
   output reg 			Over_Run_Error,
-  output reg [7 : 0] 	Data_Out
+  output wire [7 : 0] 	Data_Out
 );
 
   initial begin
@@ -153,14 +153,13 @@ module Uart_Rx #(
   wire Fifo_Empty 	= (Write_Pointer == Read_Pointer);
   wire Fifo_Full	= (Write_Pointer [Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer [Storage_Log] != Read_Pointer [Storage_Log]);
   assign Rx_Ready = !Fifo_Empty;		//This is to tell when there is data waiting in the 'Fifo_Memory_Hold'
-
+  assign Data_Out = Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
   assign Occupancy = Write_Pointer - Read_Pointer;
 
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
       Write_Pointer	<= 5'd0;
       Read_Pointer	<= 5'd0;
-      Data_Out		<= 8'd0;
       Over_Run_Error  <= 1'b0;
     end  
     else begin
@@ -174,7 +173,6 @@ module Uart_Rx #(
           Over_Run_Error	<= 1'b1; 
       end
       if(Pop_Enable & !Fifo_Empty) begin
-        Data_Out		<= Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
         Read_Pointer	<= Read_Pointer + 1;
       end
     end

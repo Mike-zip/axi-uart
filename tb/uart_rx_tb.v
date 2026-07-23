@@ -131,7 +131,7 @@ module Test_Bench;
       end
 
       if(DUT.Read_Pointer !== 0 || DUT.Write_Pointer !== 0) begin
-        $display("\nFail Reset_Mid_Frame_Check: Read_Pointer or Write_Pointer not cleared on Reset_Tb: WP = %0d, RP = %0d", DUT.Write_Pointer, DUT.Read_Pointer);
+        $display("\nFAIL Reset_Mid_Frame_Check: Read_Pointer or Write_Pointer not cleared on Reset_Tb: WP = %0d, RP = %0d", DUT.Write_Pointer, DUT.Read_Pointer);
         Error_Reset_Mid_Frame = Error_Reset_Mid_Frame + 1;
       end
 
@@ -251,15 +251,16 @@ module Test_Bench;
       end
 
       for(o = 0; o < 16; o = o + 1) begin
-        Pop_Enable_Tb = 1'b1;
-        @(posedge Clk_Tb);
-        Pop_Enable_Tb = 1'b0;
+        @(posedge Clk_Tb); #1;                              //Settle after the edge : head byte is valid now
         if(Data_Out_Tb !== o[7 : 0]) begin
           $display("\nFAIL: %0b", Data_Out_Tb);
           Error_Pop_Read = Error_Pop_Read + 1;
         end
         else 
           $display("PASS: Index %0b = %0b", o, Data_Out_Tb);
+        Pop_Enable_Tb = 1'b1;                               //Read first then advance to the next byte
+        @(posedge Clk_Tb); #1;
+        Pop_Enable_Tb = 1'b0;
       end
     end
   endtask
@@ -393,9 +394,7 @@ module Test_Bench;
 
       wait(Rx_Ready_Tb == 1'b1);
       begin
-        Pop_Enable_Tb = 1'b1;
-        repeat (2) @(posedge Clk_Tb);
-
+        @(posedge Clk_Tb); #1;                              //Settle after the edge 
         if(Bits !== Data_Out_Tb) begin
           Error_Recieve = Error_Recieve + 1;
           $display("\nFAIL: bits != data out Bits: %b, Data_Out_Tb: %b", Bits, Data_Out_Tb);
@@ -403,6 +402,8 @@ module Test_Bench;
         else begin
           $display("Bits: %b,  Data_Out_Tb: %b", Bits, Data_Out_Tb);  
         end
+        Pop_Enable_Tb = 1'b1;                               //Read first
+        @(posedge Clk_Tb); #1;
         Pop_Enable_Tb = 1'b0;
 
         //clean transition to 'Idle'

@@ -33,6 +33,8 @@ module Uart_Axi_Lite #(
   output reg [Data_Width - 1 : 0]		Read_Data,
   output reg [1 : 0]					Rresp,
   output reg							Rvalid,
+  input wire							Rready,
+
 
   //UART_TX Connections
   output reg [7 : 0]					Tx_Data,
@@ -139,21 +141,22 @@ module Uart_Axi_Lite #(
         Read_Address_Ready	<= 1'b1;
         Rresp				<= 2'b00;
         case(Read_Address)
-          Address_Status  	:
-            Read_Data	<= Status_Register;
-          Address_Control 	:
-            Read_Data	<= Control_Register;
-          default 			: 
-            Read_Data 	<= {Data_Width{1'b0}};
+          Address_Status  : Read_Data		<= Status_Register;
+          Address_Control :	Read_Data		<= Control_Register;
+          Address_Rx_Data : begin
+            Read_Data		<= {24'd0, Rx_Byte};
+            Rx_Pop_Enable 	<= 1'b1;
+          end 
+          default 		  : Read_Data 	<= {Data_Width{1'b0}};
         endcase
         Rvalid	<= 1'b1;
       end
       if(Rvalid && Rready)
         Rvalid	<= 1'b0;
-
     end
+  end
 
-    endmodule
+endmodule
 
 
 

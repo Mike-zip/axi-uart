@@ -62,6 +62,8 @@ module Uart_Axi_Lite #(
   reg [Data_Width - 1 : 0]  	Control_Register;
   reg Write_Address_Done;
   reg Write_Data_Done;
+  reg [Address_Width - 1 : 0] 	Write_Address_Q;
+  reg [Data_Width - 1 : 0]   Write_Data_Q;
   //Status Register : Purely Combinational to show live Status
   wire [Data_Width - 1 : 0] 		  Status_Register;
   assign Status_Register[0]			= Tx_Busy;
@@ -86,12 +88,15 @@ module Uart_Axi_Lite #(
       Control_Register		<= {Data_Width{1'b0}};
       Write_Address_Done	<= 1'b0;
       Write_Data_Done		<= 1'b0;
+      Write_Data_Q			<= {Data_Width{1'b0}};
+      Write_Address_Q		<= {Address_Width{1'b0}};
     end
     else begin
       Tx_Push_Enable		<= 1'b0;
       if(Write_Address_Valid && !Write_Address_Done) begin
         Write_Address_Ready	<= 1'b1;
         Write_Address_Done	<= 1'b1;
+        Write_Address_Q		<= Write_Address;
       end
       else
         Write_Address_Ready	<= 1'b0;
@@ -99,17 +104,18 @@ module Uart_Axi_Lite #(
       if(Write_Data_Valid && !Write_Data_Done) begin
         Write_Data_Ready	<= 1'b1;
         Write_Data_Done		<= 1'b1;
+        Write_Data_Q		<= Write_Data;
       end
       else
         Write_Data_Ready		<= 1'b0;
       if(Write_Address_Done && Write_Data_Done && !Bvalid) begin
-        case(Write_Address)
+        case(Write_Address_Q)
           Address_Tx_Data : begin
-            Tx_Data				<= Write_Data[7 : 0];
+            Tx_Data				<= Write_Data_Q[7 : 0];
             Tx_Push_Enable		<= 1'b1;
           end
           Address_Control :  	
-            Control_Register 	<= Write_Data;
+            Control_Register 	<= Write_Data_Q;
           default :				
             Bresp 	<= 2'b00; 
         endcase

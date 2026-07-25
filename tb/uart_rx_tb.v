@@ -42,7 +42,7 @@ module Test_Bench;
   );
 
   initial begin
-    $dumpfile("wave.vcd");
+    $dumpfile("uart_rx_tb.vcd");
     $dumpvars(0, Test_Bench);
   end
 

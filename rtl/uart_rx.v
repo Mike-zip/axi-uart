@@ -5,19 +5,19 @@
 
 module Uart_Rx #(
   parameter Clk_Frequency = 50_000_000,
-  parameter Baud_Rate	  = 9600,
+  parameter Baud_Rate	    = 9600,
   parameter Over_Sample   = 16,
   parameter Fifo_Slots    = 16
 )(
-  input wire 			Clk,
-  input wire 			Reset, 		//Active low
-  input wire  			Rx_Data,    
-  input wire 			Pop_Enable,
-  output wire 			Rx_Ready,
-  output wire          [$clog2(Fifo_Slots):0] Occupancy,
-  output reg  		    Frame_Error,
-  output reg 			Over_Run_Error,
-  output wire [7 : 0] 	Data_Out
+  input wire 		  Clk,
+  input wire 		  Reset, 		//Active low
+  input wire  	  Rx_Data,    
+  input wire 		  Pop_Enable,
+  output wire 	  Rx_Ready,
+  output wire     [$clog2(Fifo_Slots):0] Occupancy,
+  output reg  	  Frame_Error,
+  output reg 		  Over_Run_Error,
+  output wire     [7 : 0] 	Data_Out
 );
 
   initial begin
@@ -71,11 +71,11 @@ module Uart_Rx #(
   localparam    Idle	= 2'd0, Start	= 2'd1, Data 	= 2'd2, Stop	= 2'd3; //0,1,2,3 ___IDLE,START,DATA,STOP
   localparam	Middle_Of_Bit = (Over_Sample / 2) - 1;
   reg [1 : 0] 	State;
-  reg [7 : 0]	Rx_Shift_In;
-  reg [3 : 0]	Bit_Index;
-  reg [4 : 0]	Sample_Index;
-  reg [7 : 0]	Stable_Byte;
-  reg 			Byte_Valid;
+  reg [7 : 0]	  Rx_Shift_In;
+  reg [3 : 0]	  Bit_Index;
+  reg [4 : 0]	  Sample_Index;
+  reg [7 : 0]	  Stable_Byte;
+  reg 			    Byte_Valid;
 
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
@@ -102,21 +102,21 @@ module Uart_Rx #(
           Start: begin
             if(Sample_Index == Middle_Of_Bit) begin
               if(Rx_Stable_In == 1'b0) begin
-                State			<= Data;									//we leave at Middle of the bit 
+                State			<= Data;									    //we leave at Middle of the bit 
                 Sample_Index	<= 5'd0;									//which means our index zero is
-                Bit_Index		<= 4'd0;									//from the middle of the bit
-              end															//			^
-              else 															//			^
-                State	<= Idle;											//			^
-            end																//			^
-            else															//			^
-              Sample_Index	<= Sample_Index + 1;							//			^
-          end																//			^
-          //			^
-          Data: begin														//			^
+                Bit_Index		<= 4'd0;									  //from the middle of the bit
+              end															
+              else 															
+                State	<= Idle;										
+            end																
+            else															
+              Sample_Index	<= Sample_Index + 1;							
+          end															
+         
+          Data: begin														
             if(Sample_Index == Over_Sample - 1) begin 						//pick up at our index zero
-              Sample_Index	<= 5'd0;									//which is from the middle 
-              Rx_Shift_In		<= {Rx_Stable_In, Rx_Shift_In[7:1]};		//of the bit
+              Sample_Index	<= 5'd0;									            //which is from the middle 
+              Rx_Shift_In		<= {Rx_Stable_In, Rx_Shift_In[7:1]};	//of the bit
               if(Bit_Index == 4'd7)
                 State		<= Stop;
               else
@@ -150,11 +150,11 @@ module Uart_Rx #(
 
 
 
-  wire Fifo_Empty 	= (Write_Pointer == Read_Pointer);
-  wire Fifo_Full	= (Write_Pointer [Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer [Storage_Log] != Read_Pointer [Storage_Log]);
-  assign Rx_Ready = !Fifo_Empty;		//This is to tell when there is data waiting in the 'Fifo_Memory_Hold'
-  assign Data_Out = Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
-  assign Occupancy = Write_Pointer - Read_Pointer;
+  wire Fifo_Empty   = (Write_Pointer == Read_Pointer);
+  wire Fifo_Full	  = (Write_Pointer [Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer [Storage_Log] != Read_Pointer [Storage_Log]);
+  assign Rx_Ready   = !Fifo_Empty;		//This is to tell when there is data waiting in the 'Fifo_Memory_Hold'
+  assign Data_Out   = Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
+  assign Occupancy  = Write_Pointer - Read_Pointer;
 
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin

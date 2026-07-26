@@ -104,7 +104,7 @@ module Test_Bench;
     if(Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency + Error_Simultaneous_Push_Pop + Error_Reset_Mid_Frame == 0)
       $display("\nPASS: ALL CASES PASSED\n");
     else
-      $display("\nFAIL: Erros<%0d>\n", Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency + Error_Simultaneous_Push_Pop + Error_Reset_Mid_Frame);
+      $display("\nFAIL: Errors<%0d>\n", Error_Recieve + Error_Bad_Frame + Error_Over_Run + Error_Pop_Read + Error_Sync_Latency + Error_Simultaneous_Push_Pop + Error_Reset_Mid_Frame);
     Print_Occupancy();
     Print_Summary();
     $finish;

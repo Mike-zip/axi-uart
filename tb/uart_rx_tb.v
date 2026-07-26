@@ -9,10 +9,10 @@ module Test_Bench;
   //Each bit will only be 10 clock cycles instead of 50MHz/ 9600 -> '5208'
 
   localparam	  Clk_Frequency_Tb	= 50_000_000;	
-  localparam	  Baud_Rate_Tb		= 5_000_000;
+  localparam	  Baud_Rate_Tb		  = 5_000_000;
   localparam	  Over_Sample_Tb		= 10;
-  localparam	  Fifo_Slots_Tb		= 16;
-  localparam    Timeout_Ns          = 3_500_000; //About 2.7x normal full run time
+  localparam	  Fifo_Slots_Tb		  = 16;
+  localparam    Timeout_Ns        = 3_500_000; //About 2.7x normal full run time
 
   reg 		    	Clk_Tb;
   reg 			    Reset_Tb;
@@ -46,13 +46,13 @@ module Test_Bench;
     $dumpvars(0, Test_Bench);
   end
 
-  integer Error_Recieve = 0;
-  integer Error_Bad_Frame = 0;
-  integer Error_Over_Run = 0;
-  integer Error_Pop_Read = 0;
-  integer Error_Sync_Latency = 0;
+  integer Error_Recieve               = 0;
+  integer Error_Bad_Frame             = 0;
+  integer Error_Over_Run              = 0;
+  integer Error_Pop_Read              = 0;
+  integer Error_Sync_Latency          = 0;
   integer Error_Simultaneous_Push_Pop = 0;
-  integer Error_Reset_Mid_Frame = 0;
+  integer Error_Reset_Mid_Frame       = 0;
 
   integer Latency0, Latency1;
   integer B;
@@ -68,12 +68,12 @@ module Test_Bench;
 
 
   initial begin
-    Clk_Tb			= 1'b0;
-    Reset_Tb 		= 1'b0;
+    Clk_Tb			  = 1'b0;
+    Reset_Tb 		  = 1'b0;
     Rx_Data_Tb		= 8'd1;
     Pop_Enable_Tb	= 1'b0;
     #100;
-    Reset_Tb 		= 1'b1;
+    Reset_Tb 		  = 1'b1;
 
     @(posedge Clk_Tb);
     Reset_DUT();
@@ -159,7 +159,7 @@ module Test_Bench;
     integer Popped;
     integer Occ_Prev;
     integer Occ_Now;
-    reg 	Saw_Concurrent;
+    reg 	  Saw_Concurrent;
     integer i; 
     integer j; 
     integer k; 

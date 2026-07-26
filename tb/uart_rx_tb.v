@@ -8,37 +8,37 @@ module Test_Bench;
   //Baud division => Clk_Tb / Baud_Rate_Tb -> 10 : only for the sim.
   //Each bit will only be 10 clock cycles instead of 50MHz/ 9600 -> '5208'
 
-  localparam	Clk_Frequency_Tb	= 50_000_000;	
-  localparam	Baud_Rate_Tb		= 5_000_000;
-  localparam	Over_Sample_Tb		= 10;
-  localparam	Fifo_Slots_Tb		= 16;
+  localparam	  Clk_Frequency_Tb	= 50_000_000;	
+  localparam	  Baud_Rate_Tb		= 5_000_000;
+  localparam	  Over_Sample_Tb		= 10;
+  localparam	  Fifo_Slots_Tb		= 16;
   localparam    Timeout_Ns          = 3_500_000; //About 2.7x normal full run time
 
-  reg 			Clk_Tb;
-  reg 			Reset_Tb;
-  reg 			Rx_Data_Tb;
-  reg 			Pop_Enable_Tb;
-  wire			Rx_Ready_Tb;
-  wire			Frame_Error_Tb;
-  wire 			Over_Run_Error_Tb;
+  reg 		    	Clk_Tb;
+  reg 			    Reset_Tb;
+  reg 		    	Rx_Data_Tb;
+  reg 			    Pop_Enable_Tb;
+  wire			    Rx_Ready_Tb;
+  wire		    	Frame_Error_Tb;
+  wire 			    Over_Run_Error_Tb;
   wire  [7 : 0] Data_Out_Tb;
   wire  [4 : 0] Occupancy_Tb;
 
   Uart_Rx #(
-    .Clk_Frequency(Clk_Frequency_Tb),
-    .Baud_Rate(Baud_Rate_Tb),
-    .Over_Sample(Over_Sample_Tb),
-    .Fifo_Slots(Fifo_Slots_Tb)
+    .Clk_Frequency   (Clk_Frequency_Tb),
+    .Baud_Rate       (Baud_Rate_Tb),
+    .Over_Sample     (Over_Sample_Tb),
+    .Fifo_Slots      (Fifo_Slots_Tb)
   ) DUT (
-    .Clk(Clk_Tb),
-    .Reset(Reset_Tb),
-    .Rx_Data(Rx_Data_Tb),
-    .Pop_Enable(Pop_Enable_Tb),
-    .Rx_Ready(Rx_Ready_Tb),
-    .Frame_Error(Frame_Error_Tb),
-    .Over_Run_Error(Over_Run_Error_Tb),
-    .Data_Out(Data_Out_Tb),
-    .Occupancy(Occupancy_Tb)
+    .Clk             (Clk_Tb),
+    .Reset           (Reset_Tb),
+    .Rx_Data         (Rx_Data_Tb),
+    .Pop_Enable      (Pop_Enable_Tb),
+    .Rx_Ready        (Rx_Ready_Tb),
+    .Frame_Error     (Frame_Error_Tb),
+    .Over_Run_Error  (Over_Run_Error_Tb),
+    .Data_Out        (Data_Out_Tb),
+    .Occupancy       (Occupancy_Tb)
   );
 
   initial begin

@@ -23,9 +23,9 @@ module Test_Bench;
   reg								              Write_Address_Valid_Tb;
   wire								            Write_Address_Ready_Tb;
 
-  reg [Data_Width_Tb - 1 : 0]		Write_Data_Tb;
-  reg								            Write_Data_Valid_Tb;
-  wire								          Write_Data_Ready_Tb;
+  reg [Data_Width_Tb - 1 : 0]		  Write_Data_Tb;
+  reg								              Write_Data_Valid_Tb;
+  wire								            Write_Data_Ready_Tb;
 
   wire [1 : 0]			Bresp_Tb;
   wire							Bvalid_Tb;
@@ -98,12 +98,12 @@ module Test_Bench;
     $dumpvars(0, Test_Bench);
   end
 
-  integer Error_Tx_Write			= 0;
-  integer Error_Control_Read_Write	= 0;
-  integer Error_Status_Read			= 0;
-  integer Error_Rx_Read				= 0;
-  integer Error_Address_Latch		= 0;
-  integer Error_Timeout				= 0;
+  integer Error_Tx_Write			      = 0;
+  integer Error_Control_Read_Write  = 0;
+  integer Error_Status_Read			    = 0;
+  integer Error_Rx_Read				      = 0;
+  integer Error_Address_Latch		    = 0;
+  integer Error_Timeout				      = 0;
 
   reg 			Saw_Tx_Push;
   reg [7 : 0] 	Pushed_Byte;

@@ -10,28 +10,28 @@ module Test_Bench;
   localparam Fifo_Slots_Tb    = 16;
   localparam Timeout_Ns       = 2_000_000; //About 3.5x normal full run time
 
-  reg       	Clk_Tb;
-  reg       	Rst_N_Tb;
+  reg       	  Clk_Tb;
+  reg       	  Rst_N_Tb;
   reg [7 : 0] 	Data_In_Tb;
-  reg       	Push_Enable_Tb;
-  wire      	Tx_Full_Tb;
-  wire      	Tx_Busy_Tb;
-  wire [$clog2(Fifo_Slots_Tb):0] Occupancy_Tb;
-  wire      	Tx_Tb;
+  reg       	  Push_Enable_Tb;
+  wire      	  Tx_Full_Tb;
+  wire      	  Tx_Busy_Tb;
+  wire [$clog2(Fifo_Slots_Tb):0]   Occupancy_Tb;
+  wire      	  Tx_Tb;
 
   Uart_Tx #(
     .Clk_Frequency (Clk_Frequency_Tb),
     .Baud_Rate     (Baud_Rate_Tb),
     .Fifo_Slots    (Fifo_Slots_Tb)
   ) DUT (
-    .Clk         (Clk_Tb),
-    .Rst_N       (Rst_N_Tb),
-    .Data_In     (Data_In_Tb),
-    .Push_Enable (Push_Enable_Tb),
-    .Tx_Full     (Tx_Full_Tb),
-    .Tx_Busy     (Tx_Busy_Tb),
-    .Occupancy   (Occupancy_Tb),
-    .Tx          (Tx_Tb)
+    .Clk           (Clk_Tb),
+    .Rst_N         (Rst_N_Tb),
+    .Data_In       (Data_In_Tb),
+    .Push_Enable   (Push_Enable_Tb),
+    .Tx_Full       (Tx_Full_Tb),
+    .Tx_Busy       (Tx_Busy_Tb),
+    .Occupancy     (Occupancy_Tb),
+    .Tx            (Tx_Tb)
   );
 
   reg  [7 : 0] 	Reads = 8'd0;

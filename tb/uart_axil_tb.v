@@ -7,7 +7,7 @@ module Test_Bench;
 
   localparam Address_Width_Tb	= 4;
   localparam Data_Width_Tb		= 32;
-  localparam Timeout_Ns			= 100_000;
+  localparam Timeout_Ns			  = 100_000;
 
   //Register map
   localparam Address_Tx_Data	= 4'h0;
@@ -20,76 +20,76 @@ module Test_Bench;
 
   //AW - W - B
   reg [Address_Width_Tb - 1 : 0] 	Write_Address_Tb;
-  reg								Write_Address_Valid_Tb;
-  wire								Write_Address_Ready_Tb;
+  reg								              Write_Address_Valid_Tb;
+  wire								            Write_Address_Ready_Tb;
 
   reg [Data_Width_Tb - 1 : 0]		Write_Data_Tb;
-  reg								Write_Data_Valid_Tb;
-  wire								Write_Data_Ready_Tb;
+  reg								            Write_Data_Valid_Tb;
+  wire								          Write_Data_Ready_Tb;
 
-  wire [1 : 0]						Bresp_Tb;
-  wire								Bvalid_Tb;
+  wire [1 : 0]			Bresp_Tb;
+  wire							Bvalid_Tb;
   reg								Bready_Tb;
 
   //AR - R
   reg [Address_Width_Tb - 1 : 0]	Read_Address_Tb;
-  reg								Read_Address_Valid_Tb;
-  wire								Read_Address_Ready_Tb;
+  reg								              Read_Address_Valid_Tb;
+  wire								            Read_Address_Ready_Tb;
 
   wire [Data_Width_Tb - 1 : 0]		Read_Data_Tb;
-  wire [1 : 0]						Rresp_Tb;
-  wire								Rvalid_Tb;
-  reg								Rready_Tb;
+  wire [1 : 0]						        Rresp_Tb;
+  wire								            Rvalid_Tb;
+  reg								              Rready_Tb;
 
   //Tx
-  wire [7 : 0]						Tx_Data_Tb;
-  wire								Tx_Push_Enable_Tb;
+  wire [7 : 0]			Tx_Data_Tb;
+  wire							Tx_Push_Enable_Tb;
   reg								Tx_Full_Tb;
   reg								Tx_Busy_Tb;
-  reg [4 : 0]						Tx_Occupancy_Tb;
+  reg [4 : 0]				Tx_Occupancy_Tb;
 
   //Rx
-  reg [7 : 0]						Rx_Byte_Tb;
-  wire								Rx_Pop_Enable_Tb;
+  reg [7 : 0]				Rx_Byte_Tb;
+  wire							Rx_Pop_Enable_Tb;
   reg								Rx_Ready_Tb;
   reg								Frame_Error_Tb;
   reg								Over_Run_Error_Tb;
-  reg [4 : 0]						Rx_Occupancy_Tb;
+  reg [4 : 0]				Rx_Occupancy_Tb;
 
 
   Uart_Axi_Lite #(
-    .Address_Width(Address_Width_Tb),
-    .Data_Width(Data_Width_Tb)
+    .Address_Width  (Address_Width_Tb),
+    .Data_Width     (Data_Width_Tb)
   ) DUT (
-    .Clk(Clk_Tb),
-    .Rst_N(Rst_N_Tb),
-    .Write_Address(Write_Address_Tb),
-    .Write_Address_Valid(Write_Address_Valid_Tb),
-    .Write_Address_Ready(Write_Address_Ready_Tb),
-    .Write_Data(Write_Data_Tb),
-    .Write_Data_Valid(Write_Data_Valid_Tb),
-    .Write_Data_Ready(Write_Data_Ready_Tb),
-    .Bresp(Bresp_Tb),
-    .Bvalid(Bvalid_Tb),
-    .Bready(Bready_Tb),
-    .Read_Address(Read_Address_Tb),
-    .Read_Address_Valid(Read_Address_Valid_Tb),
-    .Read_Address_Ready(Read_Address_Ready_Tb),
-    .Read_Data(Read_Data_Tb),
-    .Rresp(Rresp_Tb),
-    .Rvalid(Rvalid_Tb),
-    .Rready(Rready_Tb),
-    .Tx_Data(Tx_Data_Tb),
-    .Tx_Push_Enable(Tx_Push_Enable_Tb),
-    .Tx_Full(Tx_Full_Tb),
-    .Tx_Busy(Tx_Busy_Tb),
-    .Tx_Occupancy(Tx_Occupancy_Tb),
-    .Rx_Byte(Rx_Byte_Tb),
-    .Rx_Pop_Enable(Rx_Pop_Enable_Tb),
-    .Rx_Ready(Rx_Ready_Tb),
-    .Frame_Error(Frame_Error_Tb),
-    .Over_Run_Error(Over_Run_Error_Tb),
-    .Rx_Occupancy(Rx_Occupancy_Tb)
+    .Clk                  (Clk_Tb),
+    .Rst_N                (Rst_N_Tb),
+    .Write_Address        (Write_Address_Tb),
+    .Write_Address_Valid  (Write_Address_Valid_Tb),
+    .Write_Address_Ready  (Write_Address_Ready_Tb),
+    .Write_Data           (Write_Data_Tb),
+    .Write_Data_Valid     (Write_Data_Valid_Tb),
+    .Write_Data_Ready     (Write_Data_Ready_Tb),
+    .Bresp                (Bresp_Tb),
+    .Bvalid               (Bvalid_Tb),
+    .Bready               (Bready_Tb),
+    .Read_Address         (Read_Address_Tb),
+    .Read_Address_Valid   (Read_Address_Valid_Tb),
+    .Read_Address_Ready   (Read_Address_Ready_Tb),
+    .Read_Data            (Read_Data_Tb),
+    .Rresp                (Rresp_Tb),
+    .Rvalid               (Rvalid_Tb),
+    .Rready               (Rready_Tb),
+    .Tx_Data              (Tx_Data_Tb),
+    .Tx_Push_Enable       (Tx_Push_Enable_Tb),
+    .Tx_Full              (Tx_Full_Tb),
+    .Tx_Busy              (Tx_Busy_Tb),
+    .Tx_Occupancy         (Tx_Occupancy_Tb),
+    .Rx_Byte              (Rx_Byte_Tb),
+    .Rx_Pop_Enable        (Rx_Pop_Enable_Tb),
+    .Rx_Ready             (Rx_Ready_Tb),
+    .Frame_Error          (Frame_Error_Tb),
+    .Over_Run_Error       (Over_Run_Error_Tb),
+    .Rx_Occupancy         (Rx_Occupancy_Tb)
   );
 
 
@@ -184,11 +184,11 @@ module Test_Bench;
       $display("\nPASS Control_Read_Write: 0x%08h", Read_Back);
 
     //3: Read Status & make sure live inputs land in the right fields
-    Tx_Busy_Tb 			= 1;
-    Rx_Ready_Tb 		= 1;
+    Tx_Busy_Tb 			  = 1;
+    Rx_Ready_Tb 		  = 1;
     Frame_Error_Tb 		= 1;
     Over_Run_Error_Tb	= 1;
-    Tx_Full_Tb			= 1;
+    Tx_Full_Tb			  = 1;
     Tx_Occupancy_Tb		= 5'h05;
     Rx_Occupancy_Tb		= 5'h0A;
     @(posedge Clk_Tb);
@@ -200,11 +200,11 @@ module Test_Bench;
     end
     else 
       $display("\nPASS Status_Read: 0x%08h", Read_Back);
-    Tx_Busy_Tb 			= 0;
-    Rx_Ready_Tb 		= 0;
+    Tx_Busy_Tb 			  = 0;
+    Rx_Ready_Tb 		  = 0;
     Frame_Error_Tb 		= 0;
-    Over_Run_Error_Tb 	= 0;
-    Tx_Full_Tb 			= 0;
+    Over_Run_Error_Tb = 0;
+    Tx_Full_Tb 			  = 0;
     Tx_Occupancy_Tb 	= 0;
     Rx_Occupancy_Tb 	= 0;
 

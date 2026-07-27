@@ -83,5 +83,5 @@ slack on sys_clk_pin, and that one is constrained and met.
 
 ## Files
 
-- `utilization.rpt` - report_utilization after routing
-- `timing_summary.rpt` - report_timing_summary after routing
+- [utilization.rpt](utilization.rpt) - report_utilization after routing
+- [timing_summary.rpt](timing_summary.rpt) - report_timing_summary after routing

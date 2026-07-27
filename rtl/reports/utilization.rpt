@@ -2,8 +2,7 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanc
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
 | Date         : Sun Jul 26 17:17:21 2026
-| Host         : DESKTOP-2IS5NB9 running 64-bit major release  (build 9200)
-| Command      : report_utilization -file C:/Users/Michael/Desktop/uart_reports/utilization.rpt
+| Command      : report_utilization
 | Design       : Uart_Top
 | Device       : xc7z007sclg400-1
 | Speed File   : -1
@@ -209,5 +208,3 @@ Table of Contents
 +----------+------+
 | Ref Name | Used |
 +----------+------+
-
-

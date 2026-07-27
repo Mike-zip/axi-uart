@@ -2,8 +2,7 @@ Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanc
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
 | Date         : Sun Jul 26 17:17:21 2026
-| Host         : DESKTOP-2IS5NB9 running 64-bit major release  (build 9200)
-| Command      : report_timing_summary -file C:/Users/Michael/Desktop/uart_reports/timing.rpt
+| Command      : report_timing_summary
 | Design       : Uart_Top
 | Device       : 7z007s-clg400
 | Speed File   : -1  PRODUCTION 1.12 2019-11-22
@@ -317,6 +316,3 @@ Check Type        Corner  Lib Pin  Reference Pin  Required(ns)  Actual(ns)  Slac
 Min Period        n/a     FDCE/C   n/a            1.000         10.000      9.000      SLICE_X34Y26  Axi_Lite/Bvalid_reg/C
 Low Pulse Width   Slow    FDCE/C   n/a            0.500         5.000       4.500      SLICE_X34Y26  Axi_Lite/Bvalid_reg/C
 High Pulse Width  Slow    FDCE/C   n/a            0.500         5.000       4.500      SLICE_X34Y26  Axi_Lite/Bvalid_reg/C
-
-
-

@@ -156,6 +156,11 @@ module Uart_Rx #(
   assign Data_Out   = Fifo_Memory_Hold[Read_Pointer[Storage_Log - 1 : 0]];
   assign Occupancy  = Write_Pointer - Read_Pointer;
 
+  always @(posedge Clk) begin
+    if(Byte_Valid & !Frame_Error & !Fifo_Full)
+      Fifo_Memory_Hold[Write_Pointer[Storage_Log - 1 : 0]]  <= Stable_Byte;
+  end
+  
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
       Write_Pointer	<= 0;

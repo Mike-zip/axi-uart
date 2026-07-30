@@ -158,14 +158,13 @@ module Uart_Rx #(
 
   always @(posedge Clk or negedge Reset) begin
     if(!Reset) begin
-      Write_Pointer	<= 5'd0;
-      Read_Pointer	<= 5'd0;
+      Write_Pointer	<= 0;
+      Read_Pointer	<= 0;
       Over_Run_Error  <= 1'b0;
     end  
     else begin
       if(Byte_Valid & !Frame_Error) begin
         if(!Fifo_Full) begin
-          Fifo_Memory_Hold[Write_Pointer[Storage_Log - 1 : 0]]	<= Stable_Byte; 
           Write_Pointer		<= Write_Pointer + 1;
           Over_Run_Error	<= 1'b0; //Only clears when a new byte is written
         end

@@ -27,8 +27,9 @@ module Uart_Rx #(
     end
   end
 
-  localparam 	Sample_Division = Clk_Frequency / (Baud_Rate * Over_Sample);
-  integer 		Sample_Count;
+  localparam 	Sample_Division    = Clk_Frequency / (Baud_Rate * Over_Sample);
+  localparam  Sample_Count_Width = (Sample_Division < 2) ? 1 : $clog2(Sample_Division);
+  reg     [Sample_Count_Width - 1 : 0] Sample_Count;
   reg			Sample_Tick; //Pulses at the oversample rate
 
   initial begin

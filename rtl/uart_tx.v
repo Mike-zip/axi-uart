@@ -24,7 +24,8 @@ module Uart_Tx #(
   end
 
   localparam Baud_Division = Clk_Frequency / Baud_Rate;
-  integer    Baud_Count;
+  localparam Baud_Count_Width = (Baud_Division < 2) ? 1 : $clog2(Baud_Division);
+  reg [Baud_Count_Width - 1 : 0] Baud_Count;
   wire       Baud_Tick;
 
   initial begin

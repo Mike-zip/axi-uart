@@ -54,6 +54,16 @@ module Uart_Tx #(
   localparam Idle = 2'd0, Start = 2'd1, Data = 2'd2, Stop = 2'd3; //0,1,2,3 ___IDLE,START,DATA,STOP
   reg [1:0] State;
 
+  localparam Storage_Log = $clog2(Fifo_Slots);
+
+  reg [7 : 0] 	        Fifo_Memory_Hold [0 : Fifo_Slots - 1];
+  reg [Storage_Log : 0] Write_Pointer;
+  reg [Storage_Log : 0] Read_Pointer;
+  reg 					Fifo_Pop;
+  wire Fifo_Empty = (Write_Pointer == Read_Pointer);
+  assign Occupancy = Write_Pointer - Read_Pointer;
+  assign Tx_Full  = (Write_Pointer[Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer[Storage_Log] != Read_Pointer[Storage_Log]);
+
   always @(posedge Clk or negedge Rst_N) begin
     if(!Rst_N) begin
       State     <= Idle;
@@ -107,24 +117,17 @@ module Uart_Tx #(
     end
   end
 
-  localparam Storage_Log = $clog2(Fifo_Slots);
-
-  reg [7 : 0] 			Fifo_Memory_Hold [0 : Fifo_Slots - 1];
-  reg [Storage_Log : 0] Write_Pointer;
-  reg [Storage_Log : 0] Read_Pointer;
-  reg 					Fifo_Pop;
-  wire Fifo_Empty = (Write_Pointer == Read_Pointer);
-  assign Occupancy = Write_Pointer - Read_Pointer;
-  assign Tx_Full  = (Write_Pointer[Storage_Log - 1 : 0] == Read_Pointer[Storage_Log - 1 : 0]) && (Write_Pointer[Storage_Log] != Read_Pointer[Storage_Log]);
-
+  always @(posedge Clk) begin
+    if(!Tx_Full && Push_Enable)
+      Fifo_Memory_Hold[Write_Pointer[Storage_Log - 1 : 0]]  <= Data_In;
+  end
   always @(posedge Clk or negedge Rst_N) begin
     if(!Rst_N) begin
-      Read_Pointer 		<= 0;
-      Write_Pointer 	<= 0;
+      Read_Pointer    <= 0;
+      Write_Pointer   <= 0;
     end
     else begin
       if(!Tx_Full && Push_Enable) begin
-        Fifo_Memory_Hold[Write_Pointer[Storage_Log - 1 : 0]]	<= Data_In;
         Write_Pointer <= Write_Pointer + 1;
       end
       if(Fifo_Pop)

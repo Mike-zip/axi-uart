@@ -3,7 +3,7 @@
 Visuals for this project. Each one is referenced from the main
 [README](../README.md)
 
-## Block_Design.png
+## axi_uart_Block_Design.png
 
 The Vivado block design. The Zynq7 Processing System drives my UART over
 `M_AXI_GP0`, through an AXI SmartConnect that converts AXI3 to AXI4-Lite and does
